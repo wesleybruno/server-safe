@@ -125,9 +125,43 @@
 
   <section id="step-extras" class="step disabled">
     <h2>7. Libs extras</h2>
-    <p>Docker (docker-ce + compose plugin), via repositorio oficial.</p>
-    <button id="btn-install-docker" disabled>instalar docker</button>
-    <pre class="log" id="ex-log"></pre>
+
+    <div class="extra-item">
+      <p><strong>Docker</strong> — docker-ce + compose plugin, via repositorio oficial.</p>
+      <button id="btn-install-docker" disabled>instalar docker</button>
+      <pre class="log" id="ex-docker-log"></pre>
+    </div>
+
+    <div class="extra-item">
+      <p><strong>Portainer</strong> — UI de gerenciamento de containers (requer Docker acima). Painel em <code>127.0.0.1:9443</code>, acesse via tunel SSH.</p>
+      <button id="btn-install-portainer" disabled>instalar portainer</button>
+      <pre class="log" id="ex-portainer-log"></pre>
+    </div>
+
+    <div class="extra-item">
+      <p><strong>Traefik</strong> — reverse proxy (requer Docker acima). Portas 80/443 publicas, dashboard em <code>127.0.0.1:8080</code> via tunel SSH.</p>
+      <button id="btn-install-traefik" disabled>instalar traefik</button>
+      <pre class="log" id="ex-traefik-log"></pre>
+    </div>
+
+    <div class="extra-item">
+      <p><strong>Coolify</strong> — PaaS self-hosted, instalador oficial (instala Docker sozinho se faltar).</p>
+      <button id="btn-install-coolify" disabled>instalar coolify</button>
+      <pre class="log" id="ex-coolify-log"></pre>
+    </div>
+
+    <div class="extra-item">
+      <p><strong>EasyPanel</strong> — painel de hospedagem, instalador oficial (instala Docker sozinho se faltar).</p>
+      <button id="btn-install-easypanel" disabled>instalar easypanel</button>
+      <pre class="log" id="ex-easypanel-log"></pre>
+    </div>
+
+    <div class="extra-item">
+      <p class="warn"><strong>cPanel/WHM</strong> — so AlmaLinux/CloudLinux/RHEL, exige licenca paga, demora 1-2h e assume controle total da maquina (proprio firewall/servicos). Dificil de reverter.</p>
+      <button id="btn-install-cpanel" disabled>instalar cpanel</button>
+      <pre class="log" id="ex-cpanel-log"></pre>
+    </div>
+
     <button id="btn-continue-extras">continuar</button>
   </section>
 

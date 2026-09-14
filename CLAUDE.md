@@ -25,6 +25,11 @@ Wizard web local para hardening inicial de servidor Linux novo. Binário Go úni
 | `POST /api/updates/enable` | `AutoUpdates` | `updates.go` |
 | `POST /api/timers/create` | `CreateAppTimer` | `timer.go` |
 | `POST /api/extras/docker` | `InstallDocker` | `docker.go` |
+| `POST /api/extras/portainer` | `InstallPortainer` | `portainer.go` |
+| `POST /api/extras/traefik` | `InstallTraefik` | `traefik.go` |
+| `POST /api/extras/coolify` | `InstallCoolify` | `coolify.go` |
+| `POST /api/extras/easypanel` | `InstallEasyPanel` | `easypanel.go` |
+| `POST /api/extras/cpanel` | `InstallCPanel` | `cpanel.go` |
 | `POST /api/audit/run` | `SecurityAudit` | `audit.go` |
 | `POST /api/cleanup/schedule` | `ScheduleCleanup` | `cleanup.go` |
 | `GET /api/dashboard` | `Dashboard` | `dashboard.go` |
@@ -42,7 +47,12 @@ Wizard web local para hardening inicial de servidor Linux novo. Binário Go úni
 
 Users → SSH → Firewall → Fail2ban → Auto-updates → Timers → Extras (libs) → Auditoria → Cleanup.
 
-"Extras" é uma categoria, não um módulo só: cada lib nova (Docker é a primeira) ganha seu próprio par script/módulo/rota/botão dentro do mesmo step `step-extras`, não um framework genérico de "instalar lib X". Roda antes da Auditoria de propósito — instalar software (repos novos, serviços novos escutando) é algo que a auditoria final deve enxergar.
+"Extras" é uma categoria, não um módulo só: cada lib (Docker, Portainer, Traefik, Coolify, EasyPanel, cPanel) ganha seu próprio par script/módulo/rota/botão dentro do mesmo step `step-extras`, não um framework genérico de "instalar lib X". Roda antes da Auditoria de propósito — instalar software (repos novos, serviços novos escutando) é algo que a auditoria final deve enxergar.
+
+Dentro de "extras":
+- Portainer e Traefik rodam via `docker run` direto — dependem do Docker já instalado (o script falha com `fail()` se `docker` não existir no PATH). UI de administração (Portainer 9443, dashboard do Traefik 8080) amarrada em `127.0.0.1` — mesma postura do próprio painel server-safe, acesso só via túnel SSH; portas de dado do Traefik (80/443) ficam públicas porque é o trabalho dele.
+- Coolify e EasyPanel rodam os instaladores oficiais dos fornecedores (`curl | bash`/`sh` de `cdn.coollabs.io`/`get.easypanel.io`) — eles mesmos instalam Docker se faltar, não dependem do step Docker daqui.
+- cPanel é o extra mais arriscado do grupo: só funciona em AlmaLinux/CloudLinux/RHEL (o script confere `distro_family` e recusa em Debian/Ubuntu), exige licença paga, demora 1-2h, e assume controle total da máquina (firewall/serviços próprios) — por isso tem aviso (`.warn`) na UI, diferente dos outros extras.
 
 Cada script deve validar a pré-condição do anterior antes de aplicar algo destrutivo:
 - `ssh-harden.sh` roda `sshd -t` antes de restart e confere estado efetivo (`sshd -T`) depois.

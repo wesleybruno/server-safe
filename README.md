@@ -34,7 +34,7 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 | 4 | Fail2ban | Jail do sshd configurável (bantime / findtime / maxretry) |
 | 5 | Atualizações automáticas | `unattended-upgrades` (Debian/Ubuntu) ou `dnf-automatic` (RHEL/Fedora) |
 | 6 | Timers de app | Cria par `.service`/`.timer` do systemd genérico, para restart periódico de qualquer serviço |
-| 7 | Libs extras | Instala libs adicionais via repositório oficial — por ora só Docker (docker-ce + compose plugin) |
+| 7 | Libs extras | Instala libs adicionais, uma por botão: Docker, Portainer, Traefik, Coolify, EasyPanel, cPanel/WHM |
 | 8 | Auditoria final | Checa portas abertas, sudoers com NOPASSWD, contas com UID 0 extra, permissões de `.ssh`, roda `lynis` se disponível |
 | 9 | Limpeza | Agenda o self-destruct do painel + remoção de arquivos temporários |
 

@@ -160,6 +160,36 @@ func (h *Handlers) InstallDocker(w http.ResponseWriter, r *http.Request) {
 	}, h.markOK("extras_docker"))
 }
 
+func (h *Handlers) InstallPortainer(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallPortainer(ctx, onLine)
+	}, h.markOK("extras_portainer"))
+}
+
+func (h *Handlers) InstallTraefik(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallTraefik(ctx, onLine)
+	}, h.markOK("extras_traefik"))
+}
+
+func (h *Handlers) InstallCoolify(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallCoolify(ctx, onLine)
+	}, h.markOK("extras_coolify"))
+}
+
+func (h *Handlers) InstallEasyPanel(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallEasyPanel(ctx, onLine)
+	}, h.markOK("extras_easypanel"))
+}
+
+func (h *Handlers) InstallCPanel(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallCPanel(ctx, onLine)
+	}, h.markOK("extras_cpanel"))
+}
+
 func (h *Handlers) SecurityAudit(w http.ResponseWriter, r *http.Request) {
 	var req modules.SecurityAuditRequest
 	_ = json.NewDecoder(r.Body).Decode(&req)

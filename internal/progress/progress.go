@@ -16,6 +16,11 @@ var Steps = []string{
 	"updates",
 	"timers",
 	"extras_docker",
+	"extras_portainer",
+	"extras_traefik",
+	"extras_coolify",
+	"extras_easypanel",
+	"extras_cpanel",
 	"audit",
 	"cleanup",
 }

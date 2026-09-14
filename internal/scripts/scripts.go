@@ -35,6 +35,21 @@ var SecurityAudit []byte
 //go:embed docker-install.sh
 var DockerInstall []byte
 
+//go:embed portainer-install.sh
+var PortainerInstall []byte
+
+//go:embed traefik-install.sh
+var TraefikInstall []byte
+
+//go:embed coolify-install.sh
+var CoolifyInstall []byte
+
+//go:embed easypanel-install.sh
+var EasyPanelInstall []byte
+
+//go:embed cpanel-install.sh
+var CPanelInstall []byte
+
 //go:embed dashboard-stats.sh
 var DashboardStats []byte
 

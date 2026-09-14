@@ -57,6 +57,11 @@ const STEP_LABELS = {
   updates: "Atualizacoes automaticas",
   timers: "Timers de app",
   extras_docker: "Docker",
+  extras_portainer: "Portainer",
+  extras_traefik: "Traefik",
+  extras_coolify: "Coolify",
+  extras_easypanel: "EasyPanel",
+  extras_cpanel: "cPanel",
   audit: "Auditoria final",
   cleanup: "Limpeza final",
 };
@@ -288,28 +293,43 @@ $("#btn-add-timer").addEventListener("click", async () => {
   );
 });
 
+const EXTRAS = {
+  docker: "/api/extras/docker",
+  portainer: "/api/extras/portainer",
+  traefik: "/api/extras/traefik",
+  coolify: "/api/extras/coolify",
+  easypanel: "/api/extras/easypanel",
+  cpanel: "/api/extras/cpanel",
+};
+
+function wireExtraInstall(key, url) {
+  const btn = $("#btn-install-" + key);
+  const log = $("#ex-" + key + "-log");
+  btn.addEventListener("click", async () => {
+    log.textContent = "";
+    btn.disabled = true;
+
+    await streamRequest(
+      url,
+      {},
+      (line) => appendLog(log, line),
+      (result) => {
+        appendLog(log, "== resultado: " + result.status + " - " + result.detail);
+        btn.disabled = false;
+      },
+      (err) => {
+        appendLog(log, "ERRO: " + err);
+        btn.disabled = false;
+      }
+    );
+  });
+}
+
+Object.entries(EXTRAS).forEach(([key, url]) => wireExtraInstall(key, url));
+
 $("#btn-continue-timers").addEventListener("click", () => {
-  unlock("#step-extras", "#btn-install-docker");
-});
-
-$("#btn-install-docker").addEventListener("click", async () => {
-  const log = $("#ex-log");
-  log.textContent = "";
-  $("#btn-install-docker").disabled = true;
-
-  await streamRequest(
-    "/api/extras/docker",
-    {},
-    (line) => appendLog(log, line),
-    (result) => {
-      appendLog(log, "== resultado: " + result.status + " - " + result.detail);
-      $("#btn-install-docker").disabled = false;
-    },
-    (err) => {
-      appendLog(log, "ERRO: " + err);
-      $("#btn-install-docker").disabled = false;
-    }
-  );
+  unlock("#step-extras", null);
+  Object.keys(EXTRAS).forEach((key) => { $("#btn-install-" + key).disabled = false; });
 });
 
 $("#btn-continue-extras").addEventListener("click", () => {

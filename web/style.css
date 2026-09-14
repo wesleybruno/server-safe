@@ -53,6 +53,22 @@ button {
 
 button:disabled { cursor: not-allowed; opacity: .6; }
 
+.extra-item {
+  border-top: 1px solid #8884;
+  padding-top: .75rem;
+  margin-top: .75rem;
+}
+
+.extra-item:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+
+.extra-item p { margin: 0 0 .4rem; }
+
+.extra-item code {
+  background: #8882;
+  padding: .1rem .3rem;
+  border-radius: 3px;
+}
+
 .dashboard {
   border: 1px solid #8888;
   border-radius: 8px;
