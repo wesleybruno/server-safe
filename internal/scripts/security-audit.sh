@@ -22,8 +22,16 @@ check() {
 
 echo "==> auditoria de seguranca"
 
-OPEN_PORTS=$(ss -tln 2>/dev/null | awk 'NR>1{print $4}' | sed -E 's/.*:([0-9]+)$/\1/' | sort -nu | tr '\n' ',' | sed 's/,$//')
-check "portas-abertas" "warn" "portas TCP em LISTEN: ${OPEN_PORTS:-nenhuma}"
+# So porta amarrada em endereco nao-loopback conta como exposta pra fora —
+# 127.x/[::1] (Portainer 9443, painel 8080, etc.) fica de fora de proposito:
+# nao e alcancavel da rede de jeito nenhum, listar junto so gera ruido e faz
+# parecer que precisa de acao quando nao precisa.
+OPEN_PORTS=$(ss -tln 2>/dev/null | awk 'NR>1{print $4}' | grep -vE '^(127\.|\[::1\])' | sed -E 's/.*:([0-9]+)$/\1/' | sort -nu | tr '\n' ',' | sed 's/,$//')
+if [[ -n "$OPEN_PORTS" ]]; then
+  check "portas-expostas" "warn" "portas TCP em LISTEN alcancaveis de fora (nao-loopback): $OPEN_PORTS"
+else
+  check "portas-expostas" "ok" "nenhuma porta TCP exposta alem de loopback"
+fi
 
 if command -v sshd &>/dev/null; then
   EFFECTIVE=$(sshd -T 2>/dev/null)
