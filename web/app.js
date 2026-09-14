@@ -61,12 +61,6 @@ function selectStep(stepSel) {
   });
 }
 
-// Mantido pelo nome por compatibilidade com os callbacks de sucesso de
-// cada step (so navega ate a proxima etapa depois de uma acao bem
-// sucedida, nao "destrava" mais nada).
-function unlock(stepSel) {
-  selectStep(stepSel);
-}
 
 // Nav a esquerda gerado a partir dos proprios steps (id + texto do h2) em
 // vez de duplicado no HTML — um so lugar pra manter em dia.
@@ -168,10 +162,6 @@ async function refreshDashboard() {
 refreshDashboard();
 setInterval(refreshDashboard, 3000);
 
-function unlockSSHStep() {
-  unlock("#step-ssh", "#btn-harden-ssh");
-}
-
 $("#u-password-copy").addEventListener("click", async () => {
   const input = $("#u-password-value");
   input.select();
@@ -224,11 +214,6 @@ $("#btn-create-user").addEventListener("click", async () => {
         $("#u-download").classList.remove("hidden");
         $("#u-download-link").href = "/download/key/" + outcome.key_token;
         $("#u-fingerprint").textContent = (outcome.result.data && outcome.result.data.fingerprint) || "";
-        $("#u-confirm-download").addEventListener("change", (e) => {
-          if (e.target.checked) unlockSSHStep();
-        });
-      } else {
-        unlockSSHStep();
       }
     },
     (err) => {
@@ -259,7 +244,6 @@ $("#btn-harden-ssh").addEventListener("click", async () => {
       if (result.status === "ok") {
         // propaga a porta escolhida para os steps seguintes que dependem dela
         ["#fw-ssh-port", "#f2b-ssh-port", "#au-ssh-port"].forEach((sel) => ($(sel).value = port));
-        unlock("#step-firewall", "#btn-firewall");
       }
     },
     (err) => {
@@ -285,7 +269,6 @@ $("#btn-firewall").addEventListener("click", async () => {
     (result) => {
       appendLog(log, "== resultado: " + result.status + " - " + result.detail);
       $("#btn-firewall").disabled = false;
-      if (result.status === "ok") unlock("#step-fail2ban", "#btn-fail2ban");
     },
     (err) => {
       appendLog(log, "ERRO: " + err);
@@ -312,7 +295,6 @@ $("#btn-fail2ban").addEventListener("click", async () => {
     (result) => {
       appendLog(log, "== resultado: " + result.status + " - " + result.detail);
       $("#btn-fail2ban").disabled = false;
-      if (result.status === "ok") unlock("#step-updates", "#btn-updates");
     },
     (err) => {
       appendLog(log, "ERRO: " + err);
@@ -337,7 +319,6 @@ $("#btn-updates").addEventListener("click", async () => {
     (result) => {
       appendLog(log, "== resultado: " + result.status + " - " + result.detail);
       $("#btn-updates").disabled = false;
-      if (result.status === "ok") unlock("#step-timers", null);
     },
     (err) => {
       appendLog(log, "ERRO: " + err);
@@ -407,12 +388,16 @@ function wireExtraInstall(key, url) {
 
 Object.entries(EXTRAS).forEach(([key, url]) => wireExtraInstall(key, url));
 
+// Unicos lugares que trocam de etapa por conta propria: o usuario clicou
+// num botao "continuar" explicito, o que conta como ele escolhendo
+// avancar — diferente do resultado de uma acao (aplicar/ativar/rodar), que
+// nunca deve navegar sozinho (so o usuario troca de etapa pelo menu).
 $("#btn-continue-timers").addEventListener("click", () => {
-  unlock("#step-extras");
+  selectStep("#step-extras");
 });
 
 $("#btn-continue-extras").addEventListener("click", () => {
-  unlock("#step-audit");
+  selectStep("#step-audit");
 });
 
 $("#btn-audit").addEventListener("click", async () => {
@@ -434,7 +419,6 @@ $("#btn-audit").addEventListener("click", async () => {
       appendLog(log, "== resultado: " + result.status + " - " + result.detail);
       if (result.data && result.data.report) report.textContent = result.data.report;
       $("#btn-audit").disabled = false;
-      unlock("#step-cleanup", "#btn-cleanup");
     },
     (err) => {
       appendLog(log, "ERRO: " + err);
