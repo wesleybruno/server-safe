@@ -12,6 +12,25 @@
   <p>configuracao inicial de servidor linux</p>
 </header>
 
+<section id="dashboard" class="dashboard">
+  <h2>Dashboard</h2>
+  <div class="gauges">
+    <div class="gauge">
+      <div class="gauge-label">CPU <span id="db-cpu-val">--</span></div>
+      <div class="gauge-bar"><div class="gauge-fill" id="db-cpu-fill"></div></div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-label">Memoria <span id="db-mem-val">--</span></div>
+      <div class="gauge-bar"><div class="gauge-fill" id="db-mem-fill"></div></div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-label">Disco (/) <span id="db-disk-val">--</span></div>
+      <div class="gauge-bar"><div class="gauge-fill" id="db-disk-fill"></div></div>
+    </div>
+  </div>
+  <ul id="db-steps" class="db-steps"></ul>
+</section>
+
 <main>
   <section id="step-users" class="step">
     <h2>1. Usuario e chave SSH</h2>
@@ -104,8 +123,16 @@
     <button id="btn-continue-timers">continuar (sem adicionar mais timers)</button>
   </section>
 
+  <section id="step-extras" class="step disabled">
+    <h2>7. Libs extras</h2>
+    <p>Docker (docker-ce + compose plugin), via repositorio oficial.</p>
+    <button id="btn-install-docker" disabled>instalar docker</button>
+    <pre class="log" id="ex-log"></pre>
+    <button id="btn-continue-extras">continuar</button>
+  </section>
+
   <section id="step-audit" class="step disabled">
-    <h2>7. Auditoria final de seguranca</h2>
+    <h2>8. Auditoria final de seguranca</h2>
     <label>Porta SSH esperada (opcional, refina a checagem)
       <input id="au-ssh-port" type="number" value="2222">
     </label>
@@ -115,7 +142,7 @@
   </section>
 
   <section id="step-cleanup" class="step disabled">
-    <h2>8. Limpeza final</h2>
+    <h2>9. Limpeza final</h2>
     <p class="warn">agenda a remocao do binario/instalador e o auto-desligamento deste painel apos o delay escolhido.</p>
     <label>Delay
       <select id="cl-delay">

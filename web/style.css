@@ -52,3 +52,57 @@ button {
 }
 
 button:disabled { cursor: not-allowed; opacity: .6; }
+
+.dashboard {
+  border: 1px solid #8888;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard h2 { margin-top: 0; }
+
+.gauges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.gauge-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: .85rem;
+  margin-bottom: .25rem;
+}
+
+.gauge-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: #8883;
+  overflow: hidden;
+}
+
+.gauge-fill {
+  height: 100%;
+  width: 0%;
+  background: #16a34a;
+  transition: width .3s ease, background-color .3s ease;
+}
+
+.gauge-fill.warn { background: #d97706; }
+.gauge-fill.crit { background: #dc2626; }
+
+.db-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: .35rem .75rem;
+  font-size: .85rem;
+}
+
+.db-steps li::before { content: "\25CB "; color: #8888; }
+.db-steps li.done { color: #16a34a; }
+.db-steps li.done::before { content: "\2713 "; color: #16a34a; }

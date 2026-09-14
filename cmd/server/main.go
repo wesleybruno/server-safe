@@ -16,6 +16,7 @@ import (
 
 	"server-safe/internal/api"
 	"server-safe/internal/keystore"
+	"server-safe/internal/progress"
 	"server-safe/web"
 )
 
@@ -30,6 +31,7 @@ func main() {
 	}
 
 	ks := keystore.New(*keyDir, *keyTTL)
+	pt := progress.New()
 
 	webFS, err := fs.Sub(web.Files, ".")
 	if err != nil {
@@ -38,7 +40,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.FS(webFS)))
-	api.RegisterRoutes(mux, ks)
+	api.RegisterRoutes(mux, ks, pt)
 
 	srv := &http.Server{Addr: *addr, Handler: mux}
 

@@ -32,6 +32,12 @@ var SystemdTimer []byte
 //go:embed security-audit.sh
 var SecurityAudit []byte
 
+//go:embed docker-install.sh
+var DockerInstall []byte
+
+//go:embed dashboard-stats.sh
+var DashboardStats []byte
+
 //go:embed cleanup-schedule.sh
 var CleanupSchedule []byte
 

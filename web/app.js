@@ -49,6 +49,60 @@ function unlock(stepSel, btnSel) {
   if (btnSel) $(btnSel).disabled = false;
 }
 
+const STEP_LABELS = {
+  users: "Usuario e chave SSH",
+  ssh: "Hardening SSH",
+  firewall: "Firewall (UFW)",
+  fail2ban: "Fail2ban",
+  updates: "Atualizacoes automaticas",
+  timers: "Timers de app",
+  extras_docker: "Docker",
+  audit: "Auditoria final",
+  cleanup: "Limpeza final",
+};
+
+function setGauge(prefix, pct) {
+  const val = typeof pct === "number" ? pct : parseFloat(pct);
+  const fill = $("#db-" + prefix + "-fill");
+  const label = $("#db-" + prefix + "-val");
+  if (!isFinite(val)) {
+    label.textContent = "--";
+    return;
+  }
+  label.textContent = val.toFixed(1) + "%";
+  fill.style.width = Math.min(100, Math.max(0, val)) + "%";
+  fill.classList.toggle("warn", val >= 70 && val < 90);
+  fill.classList.toggle("crit", val >= 90);
+}
+
+async function refreshDashboard() {
+  let data;
+  try {
+    const res = await fetch("/api/dashboard");
+    if (!res.ok) return;
+    data = await res.json();
+  } catch {
+    return;
+  }
+
+  setGauge("cpu", data.stats && data.stats.cpu_percent);
+  setGauge("mem", data.stats && data.stats.mem_percent);
+  setGauge("disk", data.stats && data.stats.disk_percent);
+
+  const list = $("#db-steps");
+  const order = data.steps_order || [];
+  const done = data.steps || {};
+  list.innerHTML = order
+    .map((step) => {
+      const label = STEP_LABELS[step] || step;
+      return `<li class="${done[step] ? "done" : ""}">${label}</li>`;
+    })
+    .join("");
+}
+
+refreshDashboard();
+setInterval(refreshDashboard, 3000);
+
 function unlockSSHStep() {
   unlock("#step-ssh", "#btn-harden-ssh");
 }
@@ -235,6 +289,30 @@ $("#btn-add-timer").addEventListener("click", async () => {
 });
 
 $("#btn-continue-timers").addEventListener("click", () => {
+  unlock("#step-extras", "#btn-install-docker");
+});
+
+$("#btn-install-docker").addEventListener("click", async () => {
+  const log = $("#ex-log");
+  log.textContent = "";
+  $("#btn-install-docker").disabled = true;
+
+  await streamRequest(
+    "/api/extras/docker",
+    {},
+    (line) => appendLog(log, line),
+    (result) => {
+      appendLog(log, "== resultado: " + result.status + " - " + result.detail);
+      $("#btn-install-docker").disabled = false;
+    },
+    (err) => {
+      appendLog(log, "ERRO: " + err);
+      $("#btn-install-docker").disabled = false;
+    }
+  );
+});
+
+$("#btn-continue-extras").addEventListener("click", () => {
   unlock("#step-audit", "#btn-audit");
 });
 

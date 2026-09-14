@@ -7,11 +7,35 @@ import (
 
 	"server-safe/internal/keystore"
 	"server-safe/internal/modules"
+	"server-safe/internal/progress"
 	"server-safe/internal/runner"
 )
 
 type Handlers struct {
 	KeyStore *keystore.Store
+	Progress *progress.Tracker
+}
+
+// markOK returns a runStreamed onDone callback that records step as done
+// only when the script itself reports success — right for every step that
+// mutates the system (a failed run means nothing actually changed).
+func (h *Handlers) markOK(step string) func(*runner.Result) {
+	return func(res *runner.Result) {
+		if res != nil && res.Status == "ok" {
+			h.Progress.Mark(step)
+		}
+	}
+}
+
+// markRan records step as done as soon as the script completes, regardless
+// of status — for read-only steps (the audit) whose "error" status reports
+// findings, not a failed run.
+func (h *Handlers) markRan(step string) func(*runner.Result) {
+	return func(res *runner.Result) {
+		if res != nil {
+			h.Progress.Mark(step)
+		}
+	}
 }
 
 func (h *Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +63,9 @@ func (h *Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeEvent(w, flusher, Event{Type: "error", Error: err.Error()})
 		return
+	}
+	if outcome.Result != nil && outcome.Result.Status == "ok" {
+		h.Progress.Mark("users")
 	}
 	writeEvent(w, flusher, Event{Type: "result", Result: outcome})
 }
@@ -68,7 +95,7 @@ func (h *Handlers) HardenSSH(w http.ResponseWriter, r *http.Request) {
 	}
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.HardenSSH(ctx, req, onLine)
-	})
+	}, h.markOK("ssh"))
 }
 
 func (h *Handlers) Firewall(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +110,7 @@ func (h *Handlers) Firewall(w http.ResponseWriter, r *http.Request) {
 	}
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.EnableFirewall(ctx, req, onLine)
-	})
+	}, h.markOK("firewall"))
 }
 
 func (h *Handlers) Fail2ban(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +125,7 @@ func (h *Handlers) Fail2ban(w http.ResponseWriter, r *http.Request) {
 	}
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.EnableFail2ban(ctx, req, onLine)
-	})
+	}, h.markOK("fail2ban"))
 }
 
 func (h *Handlers) AutoUpdates(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +136,7 @@ func (h *Handlers) AutoUpdates(w http.ResponseWriter, r *http.Request) {
 	}
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.EnableAutoUpdates(ctx, req, onLine)
-	})
+	}, h.markOK("updates"))
 }
 
 func (h *Handlers) CreateAppTimer(w http.ResponseWriter, r *http.Request) {
@@ -124,7 +151,13 @@ func (h *Handlers) CreateAppTimer(w http.ResponseWriter, r *http.Request) {
 	}
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.CreateAppTimer(ctx, req, onLine)
-	})
+	}, h.markOK("timers"))
+}
+
+func (h *Handlers) InstallDocker(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallDocker(ctx, onLine)
+	}, h.markOK("extras_docker"))
 }
 
 func (h *Handlers) SecurityAudit(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +165,7 @@ func (h *Handlers) SecurityAudit(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&req)
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.RunSecurityAudit(ctx, req, onLine)
-	})
+	}, h.markRan("audit"))
 }
 
 func (h *Handlers) ScheduleCleanup(w http.ResponseWriter, r *http.Request) {
@@ -143,5 +176,24 @@ func (h *Handlers) ScheduleCleanup(w http.ResponseWriter, r *http.Request) {
 	}
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.ScheduleCleanup(ctx, req, onLine)
+	}, h.markOK("cleanup"))
+}
+
+// Dashboard reports live CPU/memory/disk usage plus which wizard steps have
+// run — unlike every other endpoint this is a plain JSON GET (no log lines
+// to stream), meant to be polled.
+func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
+	res, err := modules.ReadDashboardStats(r.Context())
+	var stats map[string]any
+	if err == nil && res != nil && res.Status == "ok" {
+		stats = res.Data
+	}
+	if stats == nil {
+		stats = map[string]any{}
+	}
+	writeJSON(w, map[string]any{
+		"stats":       stats,
+		"steps":       h.Progress.Snapshot(),
+		"steps_order": progress.Steps,
 	})
 }
