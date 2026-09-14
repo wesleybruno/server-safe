@@ -61,3 +61,54 @@ distro_family() {
     fail "distro nao suportada (nem apt-get nem dnf/yum)"
   fi
 }
+
+# ensure_docker: instala e habilita o Docker via repositorio oficial se
+# ainda nao estiver presente (idempotente, no-op se ja tiver). Usado tanto
+# pelo botao "instalar docker" (docker-install.sh) quanto por qualquer
+# extra que dependa dele (Portainer, Traefik) — nesses casos roda como
+# parte da instalacao pedida, sem show de erro separado: so mais linhas
+# de log, a dependencia resolve sozinha.
+ensure_docker() {
+  if command -v docker &>/dev/null; then
+    return 0
+  fi
+
+  local family
+  family=$(distro_family)
+
+  if [[ "$family" == "debian" ]]; then
+    echo "==> instalando docker via repositorio oficial (apt)"
+    ensure_installed curl curl
+    ensure_installed gpg gnupg
+
+    install -m 0755 -d /etc/apt/keyrings
+    . /etc/os-release
+    curl -fsSL "https://download.docker.com/linux/$ID/gpg" -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
+    local arch
+    arch=$(dpkg --print-architecture)
+    echo "deb [arch=$arch signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/$ID $VERSION_CODENAME stable" \
+      > /etc/apt/sources.list.d/docker.list
+
+    DEBIAN_FRONTEND=noninteractive apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+      docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  else
+    echo "==> instalando docker via repositorio oficial (dnf/yum)"
+    if command -v dnf &>/dev/null; then
+      dnf -y -q install dnf-plugins-core
+      dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      dnf install -y -q docker-ce docker-ce-cli containerd.io docker-compose-plugin
+    else
+      yum install -y -q yum-utils
+      yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      yum install -y -q docker-ce docker-ce-cli containerd.io docker-compose-plugin
+    fi
+  fi
+
+  echo "==> habilitando servico docker"
+  systemctl enable --now docker
+
+  systemctl is-active --quiet docker || fail "servico docker nao esta ativo apos instalar"
+  command -v docker &>/dev/null || fail "binario docker nao encontrado apos instalar"
+}

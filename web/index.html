@@ -141,42 +141,89 @@
   <section id="step-extras" class="step">
     <h2>7. Libs extras</h2>
 
-    <div class="extra-item">
-      <p><strong>Docker</strong> <span class="status-badge" id="ex-docker-status">nao instalado</span> — docker-ce + compose plugin, via repositorio oficial.</p>
-      <button id="btn-install-docker">instalar docker</button>
-      <pre class="log" id="ex-docker-log"></pre>
-    </div>
+    <div class="extra-grid">
+      <div class="extra-card">
+        <div class="extra-card-head">
+          <div class="extra-icon" style="--brand:#2496ED">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288Z"/></svg>
+          </div>
+          <div class="extra-info">
+            <h3>Docker <svg class="check-icon" id="ex-docker-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
+            <p>docker-ce + compose plugin, via repositorio oficial.</p>
+          </div>
+        </div>
+        <button id="btn-install-docker">instalar</button>
+        <pre class="log" id="ex-docker-log"></pre>
+      </div>
 
-    <div class="extra-item">
-      <p><strong>Portainer</strong> <span class="status-badge" id="ex-portainer-status">nao instalado</span> — UI de gerenciamento de containers. Painel em <code>127.0.0.1:9443</code>, acesse via tunel SSH.</p>
-      <p class="warn">Depende do Docker (acima) ja instalado — o script confere e recusa se nao achar.</p>
-      <button id="btn-install-portainer">instalar portainer</button>
-      <pre class="log" id="ex-portainer-log"></pre>
-    </div>
+      <div class="extra-card">
+        <div class="extra-card-head">
+          <div class="extra-icon" style="--brand:#13BEF9">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0v1.023l-.01-.015-6.106 3.526H3.417v.751h5.359v3.638h1.942V5.284h1.786v10.416c.027 0 .54-.01.751.091V5.285h.531v10.608c.293.147.55.312.751.54V5.286h6.046v-.75h-1.267l-6.061-3.5V0zm0 1.87v2.664H7.889zm.751.031l4.56 2.633h-4.56zM9.142 5.285h1.21v1.686h-1.21zm-4.736 2.73v1.951h1.942v-1.95zm2.19 0v1.951h1.941v-1.95zm-2.19 2.171v1.951h1.942v-1.95zm2.19 0v1.951h1.941v-1.95zm2.18 0v1.951h1.942v-1.95zM4.36 12.43a3.73 3.73 0 00-.494 1.851c0 1.227.604 2.308 1.52 2.986.239-.064.477-.1.724-.11.1 0 .165.01.266.019.284-1.191 1.383-1.988 2.665-1.988.724 0 1.438.201 1.924.668.229-.476.302-1.007.302-1.575 0-.65-.165-1.292-.494-1.85zm4.828 3.16c-1.21 0-2.226.844-2.492 1.97a.922.922 0 00-.275-.009 2.559 2.559 0 00-2.564 2.556 2.565 2.565 0 003.096 2.5A2.579 2.579 0 009.233 24c.862 0 1.622-.43 2.09-1.081a2.557 2.557 0 004.186-1.97c0-.567-.193-1.099-.504-1.52a2.557 2.557 0 00-3.866-2.94 2.574 2.574 0 00-1.951-.898z"/></svg>
+          </div>
+          <div class="extra-info">
+            <h3>Portainer <svg class="check-icon" id="ex-portainer-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
+            <p>UI de gerenciamento de containers. Painel em <code>127.0.0.1:9443</code>, via tunel SSH. Instala o Docker junto se precisar.</p>
+          </div>
+        </div>
+        <button id="btn-install-portainer">instalar</button>
+        <pre class="log" id="ex-portainer-log"></pre>
+      </div>
 
-    <div class="extra-item">
-      <p><strong>Traefik</strong> <span class="status-badge" id="ex-traefik-status">nao instalado</span> — reverse proxy. Portas 80/443 publicas, dashboard em <code>127.0.0.1:8080</code> via tunel SSH.</p>
-      <p class="warn">Depende do Docker (acima) ja instalado — o script confere e recusa se nao achar.</p>
-      <button id="btn-install-traefik">instalar traefik</button>
-      <pre class="log" id="ex-traefik-log"></pre>
-    </div>
+      <div class="extra-card">
+        <div class="extra-card-head">
+          <div class="extra-icon" style="--brand:#24A1C1">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.19c1.088 0 2.056.768 2.056 1.714 0 .947-.921 1.715-2.056 1.715-.13 0-.3-.022-.509-.064a.685.685 0 0 0-.475.076l-7.37 4.195a.344.344 0 0 0 .001.597l7.99 4.49c.208.116.461.116.669 0l8.034-4.468a.343.343 0 0 0 .003-.598l-2.507-1.424a.683.683 0 0 0-.67-.003l-2.647 1.468a.234.234 0 0 0-.119.18l-.001.025c0 .946-.921 1.714-2.056 1.714s-2.056-.768-2.056-1.714c0-.947.921-1.715 2.056-1.715.042 0 .09.002.145.007l.087.008.096.013a.685.685 0 0 0 .425-.08l3.913-2.173c.3-.166.662-.171.965-.017l.04.023 5.465 3.104c.686.39.693 1.368.03 1.773l-.037.021-3.656 2.033a.343.343 0 0 0 .007.604l3.62 1.906c.72.378.736 1.402.03 1.804l-10.995 6.272a1.03 1.03 0 0 1-1.019 0L.526 16.43a1.03 1.03 0 0 1 .034-1.806l3.66-1.911a.343.343 0 0 0 .01-.603L.524 10.029a1.03 1.03 0 0 1-.041-1.77l.036-.021L9.618 3.06a.688.688 0 0 0 .308-.369l.011-.036c.32-.952 1.046-1.466 2.063-1.466Zm5.076 12.63-4.492 2.586-.041.022c-.306.158-.671.152-.973-.018l-4.478-2.527a.682.682 0 0 0-.65-.01L3.86 15.224a.343.343 0 0 0-.012.602l7.887 4.515c.21.12.467.121.677 0l7.956-4.547a.343.343 0 0 0-.01-.602l-2.623-1.384a.683.683 0 0 0-.659.012z"/></svg>
+          </div>
+          <div class="extra-info">
+            <h3>Traefik <svg class="check-icon" id="ex-traefik-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
+            <p>Reverse proxy. Portas 80/443 publicas, dashboard em <code>127.0.0.1:8080</code> via tunel SSH. Instala o Docker junto se precisar.</p>
+          </div>
+        </div>
+        <button id="btn-install-traefik">instalar</button>
+        <pre class="log" id="ex-traefik-log"></pre>
+      </div>
 
-    <div class="extra-item">
-      <p><strong>Coolify</strong> <span class="status-badge" id="ex-coolify-status">nao instalado</span> — PaaS self-hosted, instalador oficial (instala Docker sozinho se faltar).</p>
-      <button id="btn-install-coolify">instalar coolify</button>
-      <pre class="log" id="ex-coolify-log"></pre>
-    </div>
+      <div class="extra-card">
+        <div class="extra-card-head">
+          <div class="extra-icon" style="--brand:#6B16ED">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.364 4.364V0h17.454v4.364zm0 13.09H0V4.365h4.364zm0 0h17.454v4.364H4.364ZM6.545 6.546v-1.7H22.3V2.182H24v4.363zm0 0v10.4h-1.7v-10.4ZM3.882 17.936v1.7h-1.7v-1.7ZM24 24H6.545v-1.7H22.3v-2.664H24Z"/></svg>
+          </div>
+          <div class="extra-info">
+            <h3>Coolify <svg class="check-icon" id="ex-coolify-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
+            <p>PaaS self-hosted, instalador oficial. Instala o Docker sozinho se faltar.</p>
+          </div>
+        </div>
+        <button id="btn-install-coolify">instalar</button>
+        <pre class="log" id="ex-coolify-log"></pre>
+      </div>
 
-    <div class="extra-item">
-      <p><strong>EasyPanel</strong> <span class="status-badge" id="ex-easypanel-status">nao instalado</span> — painel de hospedagem, instalador oficial (instala Docker sozinho se faltar).</p>
-      <button id="btn-install-easypanel">instalar easypanel</button>
-      <pre class="log" id="ex-easypanel-log"></pre>
-    </div>
+      <div class="extra-card">
+        <div class="extra-card-head">
+          <div class="extra-icon extra-icon-mono" style="--brand:#7C6CF0">EP</div>
+          <div class="extra-info">
+            <h3>EasyPanel <svg class="check-icon" id="ex-easypanel-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
+            <p>Painel de hospedagem, instalador oficial. Instala o Docker sozinho se faltar.</p>
+          </div>
+        </div>
+        <button id="btn-install-easypanel">instalar</button>
+        <pre class="log" id="ex-easypanel-log"></pre>
+      </div>
 
-    <div class="extra-item">
-      <p class="warn"><strong>cPanel/WHM</strong> <span class="status-badge" id="ex-cpanel-status">nao instalado</span> — so AlmaLinux/CloudLinux/RHEL, exige licenca paga, demora 1-2h e assume controle total da maquina (proprio firewall/servicos). Dificil de reverter.</p>
-      <button id="btn-install-cpanel">instalar cpanel</button>
-      <pre class="log" id="ex-cpanel-log"></pre>
+      <div class="extra-card">
+        <div class="extra-card-head">
+          <div class="extra-icon" style="--brand:#FF6C2C">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.586 9.346a.538.538 0 00-.34.113.561.561 0 00-.197.299L2.74 14.654h.922a.528.528 0 00.332-.113.561.561 0 00.2-.291l.968-3.604h.744a.677.677 0 01.317.077.703.703 0 01.24.199.732.732 0 01.129.281.65.65 0 01-.01.326.698.698 0 01-.676.526h-.385a.538.538 0 00-.337.113.561.561 0 00-.2.291l-.24.896h1.201a1.939 1.939 0 001.62-.867 1.988 1.988 0 00.265-.586l.027-.1a1.854 1.854 0 00.026-.907 1.973 1.973 0 00-1.031-1.34 1.875 1.875 0 00-.88-.21H4.587zm18.447 0a.401.401 0 00-.25.082.377.377 0 00-.14.217l-1.334 5.01a1.7 1.7 0 00.57-.096 1.806 1.806 0 00.496-.266 1.74 1.74 0 00.385-.408 1.648 1.648 0 00.234-.531l.996-3.696a.23.23 0 00-.045-.217.246.246 0 00-.2-.095h-.712zM8.381 10.643l-.133.503a.564.564 0 00-.006.26.544.544 0 00.1.221.552.552 0 00.185.154.53.53 0 00.252.06h2.157a.101.101 0 01.084.038.098.098 0 01.015.088l-.02.072-.324 1.201-.013.055a.172.172 0 01-.067.105.205.205 0 01-.127.04H9.178a.147.147 0 01-.12-.057.136.136 0 01-.027-.13c.022-.074.071-.112.147-.112h.808a.53.53 0 00.332-.112.564.564 0 00.2-.293l.132-.498H8.84a1.131 1.131 0 00-.38.065 1.152 1.152 0 00-.323.176 1.194 1.194 0 00-.256.271 1.052 1.052 0 00-.156.346l-.028.1a1.095 1.095 0 00-.013.533 1.203 1.203 0 00.212.464 1.141 1.141 0 00.918.453l2.157.006a.899.899 0 00.875-.67l.525-1.95a1.101 1.101 0 00.01-.514 1.114 1.114 0 00-.205-.444 1.149 1.149 0 00-.377-.312 1.048 1.048 0 00-.498-.12H8.38zm-6.397.01a1.924 1.924 0 00-.638.107 1.989 1.989 0 00-.553.295 1.962 1.962 0 00-.7 1.045l-.027.1a1.936 1.936 0 00-.023.905 1.955 1.955 0 00.361.786 1.986 1.986 0 00.668.554 1.875 1.875 0 00.88.21h.464l.266-.983a.23.23 0 00-.043-.215.239.239 0 00-.198-.096h-.423a.702.702 0 01-.319-.074.67.67 0 01-.24-.195.732.732 0 01-.127-.281.706.706 0 01.01-.34.73.73 0 01.256-.377.675.675 0 01.42-.14h.697a.538.538 0 00.338-.114.561.561 0 00.199-.297l.232-.89h-1.5zm11.08 0l-.982 3.689a.23.23 0 00.045.217.238.238 0 00.195.095h.711a.413.413 0 00.248-.08.363.363 0 00.143-.21l.644-2.41h.745a.678.678 0 01.318.075.708.708 0 01.238.2.735.735 0 01.129.28.65.65 0 01-.01.327l-.398 1.506a.243.243 0 00.24.312h.713a.403.403 0 00.244-.08.366.366 0 00.143-.213l.332-1.248a1.897 1.897 0 00.029-.908 1.955 1.955 0 00-.361-.79 1.987 1.987 0 00-.668-.554 1.889 1.889 0 00-.885-.209h-1.813zm5.793 0a1.458 1.458 0 00-.488.081 1.489 1.489 0 00-.752.58 1.493 1.493 0 00-.205.454l-.406 1.505a1.018 1.018 0 00-.016.508 1.139 1.139 0 00.205.446 1.095 1.095 0 00.377.312 1.071 1.071 0 00.498.115h2.502a.528.528 0 00.332-.113.561.561 0 00.2-.291l.21-.791h-2.748a.2.2 0 01-.191-.252l.299-1.127a.34.34 0 01.113-.162.281.281 0 01.18-.064h1.232a.153.153 0 01.147.193l-.026.1c-.022.075-.071.113-.146.113h-.81a.538.538 0 00-.339.111.526.526 0 00-.191.293l-.133.49h2.004a.887.887 0 00.547-.181.864.864 0 00.32-.483l.12-.45a1.11 1.11 0 00.013-.513 1.076 1.076 0 00-.203-.443 1.146 1.146 0 00-.375-.313 1.047 1.047 0 00-.498-.119h-1.772Z"/></svg>
+          </div>
+          <div class="extra-info">
+            <h3>cPanel/WHM <svg class="check-icon" id="ex-cpanel-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
+            <p>So AlmaLinux/CloudLinux/RHEL, exige licenca paga.</p>
+            <p class="warn">Demora 1-2h e assume controle total da maquina (proprio firewall/servicos). Dificil de reverter.</p>
+          </div>
+        </div>
+        <button id="btn-install-cpanel">instalar</button>
+        <pre class="log" id="ex-cpanel-log"></pre>
+      </div>
     </div>
 
     <button id="btn-continue-extras">continuar</button>

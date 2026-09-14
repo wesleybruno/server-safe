@@ -102,15 +102,13 @@ const STEP_LABELS = {
 };
 
 // Os extras (Docker/Portainer/...) nao aparecem no checklist do dashboard —
-// sao muitos e opcionais, o status de cada um fica na propria aba "Libs
-// extras" (setExtraStatuses), nao duplicado aqui em cima.
+// sao muitos e opcionais, o status de cada um fica so no proprio card na
+// aba "Libs extras" (setExtraStatuses): um check ao lado do nome quando
+// instalado, nada quando nao — sem badge/texto "nao instalado" poluindo.
 function setExtraStatuses(done) {
   Object.keys(EXTRAS).forEach((key) => {
-    const badge = $("#ex-" + key + "-status");
-    if (!badge) return;
-    const installed = !!done["extras_" + key];
-    badge.textContent = installed ? "instalado" : "nao instalado";
-    badge.classList.toggle("done", installed);
+    const check = $("#ex-" + key + "-check");
+    if (check) check.hidden = !done["extras_" + key];
   });
 }
 
@@ -369,13 +367,16 @@ function wireExtraInstall(key, url) {
       (result) => {
         appendLog(log, "== resultado: " + result.status + " - " + result.detail);
         btn.disabled = false;
-        // atualizacao otimista — o proximo poll do dashboard (ate 3s) confirma
+        // atualizacao otimista — o proximo poll do dashboard (ate 3s) confirma.
+        // Portainer/Traefik/Coolify/EasyPanel instalam o Docker junto se
+        // precisar, entao o check do Docker acompanha o deles tambem.
         if (result.status === "ok") {
-          const badge = $("#ex-" + key + "-status");
-          if (badge) {
-            badge.textContent = "instalado";
-            badge.classList.add("done");
-          }
+          const dependsOnDocker = ["portainer", "traefik", "coolify", "easypanel"];
+          const keys = dependsOnDocker.includes(key) ? [key, "docker"] : [key];
+          keys.forEach((k) => {
+            const check = $("#ex-" + k + "-check");
+            if (check) check.hidden = false;
+          });
         }
       },
       (err) => {

@@ -1,6 +1,7 @@
-# Idempotent: reusa o container se ja existir. Requer Docker (rode o
-# instalador do Docker deste mesmo step antes).
-command -v docker &>/dev/null || fail "docker nao instalado — rode o instalador do Docker neste mesmo step antes"
+# Idempotent: reusa o container se ja existir. Requer Docker — instala
+# junto (ensure_docker, common.sh) se ainda nao tiver, sem show de erro
+# separado.
+command -v docker &>/dev/null || ensure_docker
 
 if docker ps -a --format '{{.Names}}' | grep -qx traefik; then
   echo "==> traefik ja existe, garantindo que esta rodando"

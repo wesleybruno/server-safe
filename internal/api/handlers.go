@@ -39,6 +39,20 @@ func (h *Handlers) markRan(step string) func(*runner.Result) {
 	}
 }
 
+// markOKWithDocker is markOK plus "extras_docker" — for extras that
+// silently install Docker as a dependency of their own success (Portainer,
+// Traefik via ensure_docker in common.sh; Coolify, EasyPanel via their own
+// vendor installer). If the step succeeded, Docker is guaranteed present
+// either way, so the dashboard/card should reflect that too.
+func (h *Handlers) markOKWithDocker(step string) func(*runner.Result) {
+	return func(res *runner.Result) {
+		if res != nil && res.Status == "ok" {
+			h.Progress.Mark(step)
+			h.Progress.Mark("extras_docker")
+		}
+	}
+}
+
 func (h *Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req modules.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -164,25 +178,25 @@ func (h *Handlers) InstallDocker(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) InstallPortainer(w http.ResponseWriter, r *http.Request) {
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.InstallPortainer(ctx, onLine)
-	}, h.markOK("extras_portainer"))
+	}, h.markOKWithDocker("extras_portainer"))
 }
 
 func (h *Handlers) InstallTraefik(w http.ResponseWriter, r *http.Request) {
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.InstallTraefik(ctx, onLine)
-	}, h.markOK("extras_traefik"))
+	}, h.markOKWithDocker("extras_traefik"))
 }
 
 func (h *Handlers) InstallCoolify(w http.ResponseWriter, r *http.Request) {
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.InstallCoolify(ctx, onLine)
-	}, h.markOK("extras_coolify"))
+	}, h.markOKWithDocker("extras_coolify"))
 }
 
 func (h *Handlers) InstallEasyPanel(w http.ResponseWriter, r *http.Request) {
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.InstallEasyPanel(ctx, onLine)
-	}, h.markOK("extras_easypanel"))
+	}, h.markOKWithDocker("extras_easypanel"))
 }
 
 func (h *Handlers) InstallCPanel(w http.ResponseWriter, r *http.Request) {
