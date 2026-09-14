@@ -1,0 +1,43 @@
+// Package scripts embeds the bash modules directly into the binary so the
+// compiled server carries every hardening script with it — nothing to
+// extract to disk, no dependency on the target machine's filesystem layout.
+package scripts
+
+import (
+	"bytes"
+	_ "embed"
+)
+
+//go:embed common.sh
+var Common []byte
+
+//go:embed user-create.sh
+var UserCreate []byte
+
+//go:embed ssh-harden.sh
+var SSHHarden []byte
+
+//go:embed firewall-ufw.sh
+var FirewallUFW []byte
+
+//go:embed fail2ban-setup.sh
+var Fail2ban []byte
+
+//go:embed auto-updates.sh
+var AutoUpdates []byte
+
+//go:embed systemd-timer.sh
+var SystemdTimer []byte
+
+//go:embed security-audit.sh
+var SecurityAudit []byte
+
+//go:embed cleanup-schedule.sh
+var CleanupSchedule []byte
+
+// Combine prefixes a module script with the shared helpers (result, fail,
+// ensure_installed, ...) so both are fed to bash as a single stdin stream —
+// no second file to source from disk.
+func Combine(module []byte) []byte {
+	return bytes.Join([][]byte{Common, module}, []byte("\n"))
+}

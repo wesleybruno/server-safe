@@ -1,0 +1,54 @@
+:root { color-scheme: light dark; }
+
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+header p { opacity: .7; margin-top: -.5rem; }
+
+.step {
+  border: 1px solid #8888;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.step.disabled { opacity: .5; pointer-events: none; }
+
+.log {
+  background: #1118;
+  color: #0f0;
+  padding: .5rem;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: .85rem;
+  white-space: pre-wrap;
+  border-radius: 4px;
+}
+
+.hidden { display: none; }
+
+.warn { color: #b45309; font-size: .9rem; }
+
+label { display: block; margin: .5rem 0; }
+
+.radio-group label { display: inline-block; margin-right: 1rem; }
+
+input[type=text], input[type=number], textarea {
+  width: 100%;
+  padding: .4rem;
+  box-sizing: border-box;
+}
+
+textarea { min-height: 4rem; }
+
+button {
+  margin-top: .5rem;
+  padding: .5rem 1rem;
+  cursor: pointer;
+}
+
+button:disabled { cursor: not-allowed; opacity: .6; }

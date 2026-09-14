@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>server-safe</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>server-safe</h1>
+  <p>configuracao inicial de servidor linux</p>
+</header>
+
+<main>
+  <section id="step-users" class="step">
+    <h2>1. Usuario e chave SSH</h2>
+    <label>Usuario novo
+      <input id="u-username" type="text" placeholder="deploy">
+    </label>
+
+    <div class="radio-group">
+      <label><input type="radio" name="key-mode" value="generate" checked> gerar nova chave</label>
+      <label><input type="radio" name="key-mode" value="import"> importar chave publica existente</label>
+    </div>
+    <textarea id="u-pubkey" placeholder="ssh-ed25519 AAAA..." class="hidden"></textarea>
+
+    <button id="btn-create-user">criar usuario</button>
+
+    <div id="u-download" class="hidden">
+      <p>fingerprint: <code id="u-fingerprint"></code></p>
+      <p><a id="u-download-link" href="#">baixar chave privada (disponivel uma unica vez)</a></p>
+      <label><input type="checkbox" id="u-confirm-download"> ja baixei e testei a chave em outro terminal</label>
+    </div>
+
+    <pre class="log" id="u-log"></pre>
+  </section>
+
+  <section id="step-ssh" class="step disabled">
+    <h2>2. Hardening SSH</h2>
+    <label>Porta nova
+      <input id="s-port" type="number" value="2222">
+    </label>
+    <label><input type="checkbox" id="s-disable-password"> desativar login por senha</label>
+    <label><input type="checkbox" id="s-disable-root"> desativar login root</label>
+    <p class="warn">confirme que a conexao com a chave nova funciona antes de desativar a senha — nao feche este terminal.</p>
+    <button id="btn-harden-ssh" disabled>aplicar</button>
+    <pre class="log" id="s-log"></pre>
+  </section>
+
+  <section id="step-firewall" class="step disabled">
+    <h2>3. Firewall (UFW)</h2>
+    <label>Porta SSH a liberar
+      <input id="fw-ssh-port" type="number" value="2222">
+    </label>
+    <label>Portas extras (opcional, separadas por virgula)
+      <input id="fw-extra-ports" type="text" placeholder="80/tcp,443/tcp">
+    </label>
+    <button id="btn-firewall" disabled>ativar firewall</button>
+    <pre class="log" id="fw-log"></pre>
+  </section>
+
+  <section id="step-fail2ban" class="step disabled">
+    <h2>4. Fail2ban</h2>
+    <label>Porta SSH monitorada
+      <input id="f2b-ssh-port" type="number" value="2222">
+    </label>
+    <label>Bantime (segundos)
+      <input id="f2b-bantime" type="number" value="3600">
+    </label>
+    <label>Findtime (segundos)
+      <input id="f2b-findtime" type="number" value="600">
+    </label>
+    <label>Maxretry
+      <input id="f2b-maxretry" type="number" value="5">
+    </label>
+    <button id="btn-fail2ban" disabled>ativar fail2ban</button>
+    <pre class="log" id="f2b-log"></pre>
+  </section>
+
+  <section id="step-updates" class="step disabled">
+    <h2>5. Atualizacoes automaticas</h2>
+    <label><input type="checkbox" id="upd-auto-reboot"> reiniciar automaticamente quando o kernel exigir</label>
+    <label>Horario do reboot (se marcado acima)
+      <input id="upd-reboot-time" type="text" value="04:00">
+    </label>
+    <button id="btn-updates" disabled>ativar atualizacoes automaticas</button>
+    <pre class="log" id="upd-log"></pre>
+  </section>
+
+  <section id="step-timers" class="step disabled">
+    <h2>6. Timers de restart de app (opcional)</h2>
+    <label>Nome do timer
+      <input id="tm-name" type="text" placeholder="minha-api">
+    </label>
+    <label>Comando a executar
+      <input id="tm-command" type="text" placeholder="systemctl restart minha-api">
+    </label>
+    <label>Agenda (OnCalendar do systemd)
+      <input id="tm-calendar" type="text" placeholder="daily" value="daily">
+    </label>
+    <button id="btn-add-timer">adicionar timer</button>
+    <pre class="log" id="tm-log"></pre>
+    <button id="btn-continue-timers">continuar (sem adicionar mais timers)</button>
+  </section>
+
+  <section id="step-audit" class="step disabled">
+    <h2>7. Auditoria final de seguranca</h2>
+    <label>Porta SSH esperada (opcional, refina a checagem)
+      <input id="au-ssh-port" type="number" value="2222">
+    </label>
+    <button id="btn-audit" disabled>rodar auditoria</button>
+    <pre class="log" id="au-log"></pre>
+    <pre class="log" id="au-report"></pre>
+  </section>
+
+  <section id="step-cleanup" class="step disabled">
+    <h2>8. Limpeza final</h2>
+    <p class="warn">agenda a remocao do binario/instalador e o auto-desligamento deste painel apos o delay escolhido.</p>
+    <label>Delay
+      <select id="cl-delay">
+        <option value="1min">1 minuto</option>
+        <option value="5min" selected>5 minutos</option>
+        <option value="15min">15 minutos</option>
+      </select>
+    </label>
+    <label>Caminhos extras para remover (opcional, separados por virgula)
+      <input id="cl-paths" type="text" placeholder="/root/server-safe">
+    </label>
+    <label><input type="checkbox" id="cl-self-destruct" checked> parar e remover o servico server-safe (self-destruct)</label>
+    <button id="btn-cleanup" disabled>agendar limpeza final</button>
+    <pre class="log" id="cl-log"></pre>
+  </section>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>
