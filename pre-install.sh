@@ -12,6 +12,19 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+echo "==> sincronizando relogio"
+# Maquina nova recem-provisionada costuma subir com o relogio atrasado alguns
+# minutos (antes do primeiro sync NTP) — isso faz o apt rejeitar o
+# InRelease do repositorio com "not valid yet" e o script abortar (set -e).
+if command -v timedatectl &>/dev/null; then
+  timedatectl set-ntp true 2>/dev/null || true
+  systemctl restart systemd-timesyncd 2>/dev/null || true
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    timedatectl status 2>/dev/null | grep -qi "System clock synchronized: yes" && break
+    sleep 1
+  done
+fi
+
 echo "==> atualizando pacotes do sistema"
 if command -v apt-get &>/dev/null; then
   DEBIAN_FRONTEND=noninteractive apt-get update -qq
