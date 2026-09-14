@@ -231,12 +231,24 @@
 
   <section id="step-audit" class="step">
     <h2>8. Auditoria final de seguranca</h2>
-    <label>Porta SSH esperada (opcional, refina a checagem)
-      <input id="au-ssh-port" type="number" value="2222">
-    </label>
+    <input type="hidden" id="au-ssh-port" value="">
     <button id="btn-audit">rodar auditoria</button>
     <pre class="log" id="au-log"></pre>
-    <pre class="log" id="au-report"></pre>
+
+    <div id="au-summary" class="audit-summary hidden">
+      <div class="audit-counts">
+        <span class="audit-count audit-count-ok"><strong id="au-count-ok">0</strong> ok</span>
+        <span class="audit-count audit-count-warn"><strong id="au-count-warn">0</strong> alerta(s)</span>
+        <span class="audit-count audit-count-fail"><strong id="au-count-fail">0</strong> falha(s)</span>
+      </div>
+      <p id="au-clean" class="hidden">Nenhuma falha ou alerta encontrado.</p>
+      <ul id="au-fails" class="audit-list audit-list-fail"></ul>
+      <ul id="au-warns" class="audit-list audit-list-warn"></ul>
+      <details class="audit-details">
+        <summary>ver relatorio completo</summary>
+        <pre class="log" id="au-report"></pre>
+      </details>
+    </div>
   </section>
 
   <section id="step-cleanup" class="step">

@@ -401,15 +401,53 @@ $("#btn-continue-extras").addEventListener("click", () => {
   selectStep("#step-audit");
 });
 
+// Report do backend e texto plano, uma linha por checagem:
+// "[ok|warn|fail] label - detalhe" (+ secao solta do lynis no fim, que nao
+// bate no formato e fica de fora do resumo, so aparece no relatorio
+// completo). Monta o resumo (falhas/alertas) a partir dai.
+function renderAuditList(el, items) {
+  el.innerHTML = "";
+  items.forEach((item) => {
+    const li = document.createElement("li");
+    const strong = document.createElement("strong");
+    strong.textContent = item.label;
+    li.appendChild(strong);
+    li.appendChild(document.createTextNode(" — " + item.detail));
+    el.appendChild(li);
+  });
+}
+
+function renderAuditSummary(data) {
+  const report = (data && data.report) || "";
+  const fails = [];
+  const warns = [];
+  report.split("\n").forEach((line) => {
+    const m = line.match(/^\[(ok|warn|fail)\]\s+(\S+)\s+-\s+(.*)$/);
+    if (!m) return;
+    const [, status, label, detail] = m;
+    if (status === "fail") fails.push({ label, detail });
+    else if (status === "warn") warns.push({ label, detail });
+  });
+
+  $("#au-count-ok").textContent = (data && data.pass) || 0;
+  $("#au-count-warn").textContent = (data && data.warn) || 0;
+  $("#au-count-fail").textContent = (data && data.fail) || 0;
+
+  renderAuditList($("#au-fails"), fails);
+  renderAuditList($("#au-warns"), warns);
+  $("#au-clean").classList.toggle("hidden", fails.length + warns.length > 0);
+  $("#au-report").textContent = report;
+  $("#au-summary").classList.remove("hidden");
+}
+
 $("#btn-audit").addEventListener("click", async () => {
   const portVal = $("#au-ssh-port").value.trim();
   const body = {};
   if (portVal) body.ssh_port = parseInt(portVal, 10);
 
   const log = $("#au-log");
-  const report = $("#au-report");
   log.textContent = "";
-  report.textContent = "";
+  $("#au-summary").classList.add("hidden");
   $("#btn-audit").disabled = true;
 
   await streamRequest(
@@ -418,7 +456,7 @@ $("#btn-audit").addEventListener("click", async () => {
     (line) => appendLog(log, line),
     (result) => {
       appendLog(log, "== resultado: " + result.status + " - " + result.detail);
-      if (result.data && result.data.report) report.textContent = result.data.report;
+      renderAuditSummary(result.data);
       $("#btn-audit").disabled = false;
     },
     (err) => {

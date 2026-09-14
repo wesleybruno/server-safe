@@ -485,3 +485,66 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 }
 
 .extra-card button { align-self: flex-start; }
+
+/* ---- step 8: audit summary -----------------------------------------*/
+
+.audit-summary { margin-top: 1rem; }
+
+.audit-counts {
+  display: flex;
+  gap: 1rem;
+  font-size: .85rem;
+  color: var(--ink-muted);
+  margin-bottom: .75rem;
+}
+
+.audit-count strong {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.audit-count-fail strong { color: var(--danger); }
+.audit-count-warn strong { color: var(--warn); }
+.audit-count-ok strong { color: var(--ok); }
+
+.audit-list {
+  list-style: none;
+  margin: 0 0 .75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.audit-list:empty { display: none; }
+
+.audit-list li {
+  font-size: .85rem;
+  padding: .5rem .75rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid transparent;
+}
+
+.audit-list li strong { font-family: var(--font-mono); font-size: .8rem; }
+
+.audit-list-fail li {
+  background: var(--danger-soft);
+  border-left-color: var(--danger);
+  color: var(--danger);
+}
+
+.audit-list-warn li {
+  background: var(--warn-soft);
+  border-left-color: var(--warn);
+  color: var(--warn);
+}
+
+.audit-details { margin-top: .75rem; }
+
+.audit-details summary {
+  cursor: pointer;
+  font-size: .8rem;
+  color: var(--accent);
+  user-select: none;
+}
