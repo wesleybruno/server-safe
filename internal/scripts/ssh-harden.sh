@@ -45,22 +45,42 @@ fi
 
 SSH_UNIT=""
 for unit in ssh sshd; do
-  if systemctl list-unit-files "$unit.service" &>/dev/null && systemctl is-enabled "$unit.service" &>/dev/null; then
+  if systemctl list-unit-files "$unit.service" --no-legend --plain 2>/dev/null | grep -q "^$unit\.service" \
+    || systemctl list-unit-files "$unit.socket" --no-legend --plain 2>/dev/null | grep -q "^$unit\.socket"; then
     SSH_UNIT="$unit"
     break
   fi
 done
 [[ -n "$SSH_UNIT" ]] || fail "nao encontrei unit systemd do ssh (ssh/sshd)"
 
-# restart (nao reload): reload nao reabre o listener socket na porta nova.
-# conexoes ja estabelecidas continuam ativas durante o restart.
-echo "==> reiniciando $SSH_UNIT"
-systemctl restart "$SSH_UNIT"
+if systemctl list-unit-files "$SSH_UNIT.socket" --no-legend --plain 2>/dev/null | grep -q "^$SSH_UNIT\.socket"; then
+  # Ubuntu 24.04+ ativa o sshd via socket activation por padrao: quem
+  # escuta a porta e o $SSH_UNIT.socket (fica "static", nao "enabled"), o
+  # .service so sobe por conexao — Port no sshd_config sozinho nao move o
+  # bind, precisa sobrescrever o ListenStream do socket.
+  echo "==> ssh ativado via socket ($SSH_UNIT.socket), ajustando ListenStream"
+  mkdir -p "/etc/systemd/system/$SSH_UNIT.socket.d"
+  {
+    echo "[Socket]"
+    echo "ListenStream="
+    echo "ListenStream=$SS_NEW_PORT"
+  } > "/etc/systemd/system/$SSH_UNIT.socket.d/99-server-safe.conf"
+  systemctl daemon-reload
+  echo "==> reiniciando $SSH_UNIT.socket"
+  systemctl restart "$SSH_UNIT.socket"
+else
+  # restart (nao reload): reload nao reabre o listener socket na porta nova.
+  # conexoes ja estabelecidas continuam ativas durante o restart.
+  echo "==> reiniciando $SSH_UNIT.service"
+  systemctl restart "$SSH_UNIT.service"
+fi
 
 sleep 1
 echo "==> validando estado efetivo"
 EFFECTIVE=$(sshd -T 2>/dev/null)
-echo "$EFFECTIVE" | grep -qi "^port $SS_NEW_PORT$" || fail "porta nova nao esta ativa na config efetiva"
+# valida a porta pelo listener real (ss), nao so pelo sshd -T — sob socket
+# activation o bind e feito pelo systemd, sshd -T pode nao refletir isso.
+ss -tln 2>/dev/null | awk '{print $4}' | grep -qE ":${SS_NEW_PORT}\$" || fail "porta nova nao esta escutando (ss -tln)"
 
 if [[ "$DISABLE_ROOT" == "true" ]]; then
   echo "$EFFECTIVE" | grep -qi "^permitrootlogin no$" || fail "permitrootlogin nao aplicado"

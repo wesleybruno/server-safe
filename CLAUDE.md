@@ -55,7 +55,7 @@ Dentro de "extras":
 - cPanel é o extra mais arriscado do grupo: só funciona em AlmaLinux/CloudLinux/RHEL (o script confere `distro_family` e recusa em Debian/Ubuntu), exige licença paga, demora 1-2h, e assume controle total da máquina (firewall/serviços próprios) — por isso tem aviso (`.warn`) na UI, diferente dos outros extras.
 
 Cada script deve validar a pré-condição do anterior antes de aplicar algo destrutivo:
-- `ssh-harden.sh` roda `sshd -t` antes de restart e confere estado efetivo (`sshd -T`) depois.
+- `ssh-harden.sh` roda `sshd -t` antes de restart e confere a porta pelo listener real (`ss -tln`) depois — não só via `sshd -T`, que em distros com socket activation (Ubuntu 24.04+: `ssh.socket` escuta, `ssh.service` fica "static") não reflete o bind de verdade. Nesse caso o script detecta o `.socket` e sobrescreve o `ListenStream` dele em vez de só reiniciar o `.service`.
 - `firewall-ufw.sh` recusa rodar se o sshd não estiver de fato escutando na porta nova (`ss -tln`) antes de ativar `deny incoming` por padrão.
 - Nunca fechar acesso antigo antes do novo estar confirmado.
 
