@@ -4,7 +4,8 @@ Wizard web local para hardening inicial de servidor Linux novo. Binário Go úni
 
 ## Arquitetura
 
-- `pre-install.sh` / `install.sh` (raiz do repo): bootstrap standalone, rodado direto pelo admin (`sudo bash <script>`) — não passam por `runner`/`common.sh`/`RESULT_JSON`, esse contrato é só para os módulos do wizard. `pre-install.sh` atualiza o sistema e instala Go; `install.sh` compila o binário e sobe o serviço systemd.
+- `pre-install.sh` / `install.sh` (raiz do repo): bootstrap standalone, rodado direto pelo admin (`sudo bash <script>`) — não passam por `runner`/`common.sh`/`RESULT_JSON`, esse contrato é só para os módulos do wizard. `pre-install.sh` atualiza o sistema e instala Go; `install.sh` baixa o binário pronto do último GitHub Release (`server-safe-linux-<amd64|arm64>`) e só compila localmente (exigindo Go) se não achar release pra arquitetura.
+- `.github/workflows/release.yml`: builda linux/amd64 + linux/arm64 (`CGO_ENABLED=0`) e publica como release ao dar push numa tag `v*.*.*` — é isso que `install.sh` baixa.
 - `cmd/server/main.go`: entrypoint, flags `--addr`/`--keydir`/`--key-ttl`.
 - `internal/runner`: executa bash via stdin (`bash -s -- args`), sem gravar scripts em disco. O script deve emitir uma última linha `RESULT_JSON:{"status":"ok|error","detail":"...","data":{...}}` — esse é o contrato entre bash e Go.
 - `internal/scripts/common.sh`: helpers compartilhados (`result()`, `fail()`, `ensure_installed()`, `distro_family()`, `json_escape()`). Todo módulo é concatenado com `common.sh` via `scripts.Combine()` antes de rodar — **não duplicar essas funções em scripts novos**.

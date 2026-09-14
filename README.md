@@ -9,19 +9,18 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 ## Como funciona
 
 1. Clone este repo na máquina nova.
-2. Máquina sem Go instalado? Rode `sudo bash pre-install.sh` primeiro — atualiza os pacotes do sistema e instala o Go.
-3. Rode `sudo bash install.sh` — compila localmente com Go e sobe como serviço systemd escutando em `127.0.0.1:8080`.
-4. Abra um túnel SSH até o painel (ele só escuta em localhost, de propósito — detalhes e portas extras em [Acesso via túnel SSH](#acesso-via-túnel-ssh)):
+2. Rode `sudo bash install.sh` — baixa o binário pronto do [último release](https://github.com/wesleybruno/server-safe/releases/latest) (linux/amd64 ou linux/arm64, sem precisar de Go na máquina) e sobe como serviço systemd escutando em `127.0.0.1:8080`. Se ainda não houver release publicado (ou a arquitetura não tiver binário pronto), ele cai pra compilar localmente — nesse caso rode `sudo bash pre-install.sh` antes pra ter o Go instalado.
+3. Abra um túnel SSH até o painel (ele só escuta em localhost, de propósito — detalhes e portas extras em [Acesso via túnel SSH](#acesso-via-túnel-ssh)):
    ```
    ssh -L 8080:127.0.0.1:8080 usuario@maquina
    ```
-5. Acesse `http://127.0.0.1:8080` no navegador local e siga o wizard. O topo da página tem um dashboard sempre visível com uso de CPU/memória/disco e o checklist de etapas já executadas, atualizado sozinho a cada poucos segundos.
-6. No último step, agende a limpeza final — o painel se autodestrói (para o serviço, remove o binário e arquivos temporários).
+4. Acesse `http://127.0.0.1:8080` no navegador local e siga o wizard. O topo da página tem um dashboard sempre visível com uso de CPU/memória/disco e o checklist de etapas já executadas, atualizado sozinho a cada poucos segundos.
+5. No último step, agende a limpeza final — o painel se autodestrói (para o serviço, remove o binário e arquivos temporários).
 
 ## Requisitos
 
 - Máquina alvo: Linux com systemd, acesso root.
-- Go instalado na máquina alvo para compilar (`install.sh` builda a partir do repo) — `pre-install.sh` resolve isso se faltar. Distribuição via binário pré-compilado ainda não existe — ver TODO em `install.sh`.
+- Go só é necessário se `install.sh` não achar um binário pronto pra arquitetura da máquina (releases cobrem linux/amd64 e linux/arm64) — nesse caso `pre-install.sh` instala o Go antes.
 - Pacotes usados pelos módulos (`ufw`, `fail2ban`, `unattended-upgrades`/`dnf-automatic`, `docker-ce`) precisam estar disponíveis no repositório do sistema — cada módulo instala o que falta automaticamente via `apt-get`/`dnf`/`yum`.
 
 ## Passos do wizard
@@ -82,6 +81,11 @@ GOOS=linux GOARCH=amd64 go build -o server-safe ./cmd/server
 Rodar localmente só para ver a UI (os módulos exigem root + Linux, então não vão funcionar de fato fora do alvo real):
 ```bash
 go run ./cmd/server --addr 127.0.0.1:8080
+```
+
+Pra publicar um release (`.github/workflows/release.yml` builda linux/amd64 + linux/arm64 e anexa como assets `server-safe-linux-<arch>`, é isso que `install.sh` baixa):
+```bash
+git tag v0.1.0 && git push origin v0.1.0
 ```
 
 ## Status
