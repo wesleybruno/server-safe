@@ -11,7 +11,7 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 1. Clone este repo na máquina nova.
 2. Máquina sem Go instalado? Rode `sudo bash pre-install.sh` primeiro — atualiza os pacotes do sistema e instala o Go.
 3. Rode `sudo bash install.sh` — compila localmente com Go e sobe como serviço systemd escutando em `127.0.0.1:8080`.
-4. Abra um túnel SSH até o painel (ele só escuta em localhost, de propósito):
+4. Abra um túnel SSH até o painel (ele só escuta em localhost, de propósito — detalhes e portas extras em [Acesso via túnel SSH](#acesso-via-túnel-ssh)):
    ```
    ssh -L 8080:127.0.0.1:8080 usuario@maquina
    ```
@@ -37,6 +37,25 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 | 7 | Libs extras | Instala libs adicionais, uma por botão: Docker, Portainer, Traefik, Coolify, EasyPanel, cPanel/WHM |
 | 8 | Auditoria final | Checa portas abertas, sudoers com NOPASSWD, contas com UID 0 extra, permissões de `.ssh`, roda `lynis` se disponível |
 | 9 | Limpeza | Agenda o self-destruct do painel + remoção de arquivos temporários |
+
+## Acesso via túnel SSH
+
+Painel server-safe e as UIs de admin dos extras (Portainer, dashboard do Traefik) só escutam em `127.0.0.1` na máquina — de propósito, nunca expostos direto na internet. Acesso sempre via túnel SSH, um `-L` por porta que você for usar:
+
+```bash
+ssh -L 8080:127.0.0.1:8080 \
+    -L 9443:127.0.0.1:9443 \
+    -L 8888:127.0.0.1:8080 \
+    usuario@servidor
+```
+
+| Porta local | Aponta pra | Serviço |
+|---|---|---|
+| `8080` | `127.0.0.1:8080` no servidor | painel server-safe → `http://127.0.0.1:8080` |
+| `9443` | `127.0.0.1:9443` no servidor | Portainer (se instalado) → `https://127.0.0.1:9443` |
+| `8888` | `127.0.0.1:8080` no servidor | dashboard Traefik (se instalado) → `http://127.0.0.1:8888` — porta local diferente pra não colidir com o painel |
+
+Só inclua os `-L` dos serviços que você de fato instalou. Deixe o terminal do SSH aberto enquanto usa.
 
 ## Segurança da chave SSH gerada
 
