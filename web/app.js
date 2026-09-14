@@ -112,6 +112,21 @@ function unlockSSHStep() {
   unlock("#step-ssh", "#btn-harden-ssh");
 }
 
+$("#u-password-copy").addEventListener("click", async () => {
+  const input = $("#u-password-value");
+  input.select();
+  try {
+    await navigator.clipboard.writeText(input.value);
+    const btn = $("#u-password-copy");
+    const original = btn.textContent;
+    btn.textContent = "copiado!";
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch {
+    // clipboard API pode falhar (permissao/contexto) — o input.select() acima
+    // ja deixa o valor selecionado pra copiar na mao (Ctrl+C).
+  }
+});
+
 document.querySelectorAll('input[name="key-mode"]').forEach((r) => {
   r.addEventListener("change", () => {
     const importing = document.querySelector('input[name="key-mode"]:checked').value === "import";
@@ -138,6 +153,12 @@ $("#btn-create-user").addEventListener("click", async () => {
       appendLog(log, "== resultado: " + outcome.result.status + " - " + outcome.result.detail);
       $("#btn-create-user").disabled = false;
       if (outcome.result.status !== "ok") return;
+
+      const password = outcome.result.data && outcome.result.data.password;
+      if (password) {
+        $("#u-password-box").classList.remove("hidden");
+        $("#u-password-value").value = password;
+      }
 
       if (outcome.key_token) {
         $("#u-download").classList.remove("hidden");

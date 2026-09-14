@@ -55,6 +55,8 @@ Dentro de "extras":
 - Coolify e EasyPanel rodam os instaladores oficiais dos fornecedores (`curl | bash`/`sh` de `cdn.coollabs.io`/`get.easypanel.io`) — eles mesmos instalam Docker se faltar, não dependem do step Docker daqui.
 - cPanel é o extra mais arriscado do grupo: só funciona em AlmaLinux/CloudLinux/RHEL (o script confere `distro_family` e recusa em Debian/Ubuntu), exige licença paga, demora 1-2h, e assume controle total da máquina (firewall/serviços próprios) — por isso tem aviso (`.warn`) na UI, diferente dos outros extras.
 
+`user-create.sh` gera uma senha local aleatória (`$RANDOM`, 20 chars, sem caracteres ambíguos) e roda `chpasswd` na criação — só pra `sudo`/`su`, não mexe em `PasswordAuthentication` do SSH. Necessário porque a conta não tem senha nenhuma por padrão (só chave) e `sudo` sempre pede uma pra autenticar. Só gera na criação (`if id ... else`), não reseta em reruns pro mesmo username. Vai em `data.password` do `RESULT_JSON` — mesmo mecanismo do `fingerprint`, sem token/download dedicado como a chave privada (não é um arquivo que arrisca ficar em disco, é só pra copiar/colar uma vez).
+
 Cada script deve validar a pré-condição do anterior antes de aplicar algo destrutivo:
 - `ssh-harden.sh` roda `sshd -t` antes de restart e confere a porta pelo listener real (`ss -tln`) depois — não só via `sshd -T`, que em distros com socket activation (Ubuntu 24.04+: `ssh.socket` escuta, `ssh.service` fica "static") não reflete o bind de verdade. Nesse caso o script detecta o `.socket` e sobrescreve o `ListenStream` dele em vez de só reiniciar o `.service`.
 - `firewall-ufw.sh` recusa rodar se o sshd não estiver de fato escutando na porta nova (`ss -tln`) antes de ativar `deny incoming` por padrão.

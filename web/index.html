@@ -52,6 +52,15 @@
       <label><input type="checkbox" id="u-confirm-download"> ja baixei e testei a chave em outro terminal</label>
     </div>
 
+    <div id="u-password-box" class="hidden">
+      <p>Senha local (so pra <code>sudo</code>/<code>su</code> — SSH continua só por chave):</p>
+      <div class="copy-row">
+        <input id="u-password-value" type="text" readonly>
+        <button id="u-password-copy" type="button">copiar</button>
+      </div>
+      <p class="warn">Anote agora — não fica salva em lugar nenhum e não é reexibida depois.</p>
+    </div>
+
     <pre class="log" id="u-log"></pre>
   </section>
 

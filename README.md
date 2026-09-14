@@ -27,7 +27,7 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 
 | # | Step | O que faz |
 |---|------|-----------|
-| 1 | Usuário | Cria usuário sudo novo; gera chave SSH ed25519 ou aceita chave pública importada |
+| 1 | Usuário | Cria usuário sudo novo; gera chave SSH ed25519 ou aceita chave pública importada; gera senha local aleatória (só `sudo`/`su`) |
 | 2 | SSH | Muda a porta, desativa login por senha e/ou root |
 | 3 | Firewall | Ativa UFW com política deny-default, libera a porta SSH + portas extras |
 | 4 | Fail2ban | Jail do sshd configurável (bantime / findtime / maxretry) |
@@ -61,6 +61,14 @@ Só inclua os `-L` dos serviços que você de fato instalou. Deixe o terminal do
 - A chave privada nunca toca disco persistente — fica em `/dev/shm` (RAM/tmpfs).
 - O link de download é de uso único e expira em 15 minutos mesmo que ninguém baixe.
 - O wizard exige o checkbox "já testei a chave" antes de liberar o step que desativa login por senha, para evitar lockout.
+
+## Senha local do usuário criado
+
+O usuário criado no step 1 não tem senha nenhuma por padrão — login SSH é só por chave. Só que `sudo` sempre pede uma senha pra autenticar, e sem nenhuma cadastrada ele nunca passa. Por isso o wizard gera uma senha local aleatória (20 caracteres, sem `0/O/1/l/I` pra facilitar copiar/ler) e mostra na tela com botão de copiar, uma única vez — não fica salva em arquivo nenhum, não é reexibida depois.
+
+Essa senha só vale pra `sudo`/`su` local — não muda nada no SSH (se o step 2 desativar login por senha, isso continua bloqueado). É defesa extra: mesmo que a chave SSH vaze ou uma sessão seja sequestrada, ainda precisa da senha pra virar root.
+
+Alternativa (não usada aqui de propósito): configurar `NOPASSWD` no sudoers pra não precisar de senha nenhuma. O próprio step 8 (auditoria) do wizard reporta isso como warning (`sudo-nopasswd`), então essa ferramenta não empurra esse caminho por padrão.
 
 ## Proteções anti-lockout
 

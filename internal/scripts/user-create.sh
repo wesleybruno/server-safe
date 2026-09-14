@@ -10,8 +10,23 @@ if [[ ! "$SS_USERNAME" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]]; then
   fail "username invalido: $SS_USERNAME"
 fi
 
+# $RANDOM (builtin do bash) em vez de /dev/urandom + head: sob o
+# `set -o pipefail` do common.sh, head fechando o pipe cedo manda SIGPIPE
+# pro gerador e aborta o script. Alfabeto sem caracteres ambiguos (sem
+# 0/O/1/l/I) pra facilitar copiar/ler na tela.
+generate_local_password() {
+  local chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+  local pass="" i
+  for ((i = 0; i < 20; i++)); do
+    pass+="${chars:RANDOM % ${#chars}:1}"
+  done
+  printf '%s' "$pass"
+}
+
+PASSWORD=""
+
 if id "$SS_USERNAME" &>/dev/null; then
-  echo "==> usuario ja existe, pulando useradd"
+  echo "==> usuario ja existe, pulando useradd (senha local nao e alterada)"
 else
   echo "==> criando usuario $SS_USERNAME"
   if getent group sudo &>/dev/null; then
@@ -22,6 +37,13 @@ else
     fail "nenhum grupo sudo/wheel encontrado"
   fi
   useradd -m -s /bin/bash -G "$SUDO_GROUP" "$SS_USERNAME"
+
+  # Senha local so pra sudo/su — SSH continua so por chave, isso nao mexe
+  # em PasswordAuthentication. Sem essa senha, sudo nunca autentica numa
+  # conta sem senha nenhuma (nao tem o que digitar que funcione).
+  PASSWORD=$(generate_local_password)
+  echo "$SS_USERNAME:$PASSWORD" | chpasswd
+  echo "==> senha local gerada para sudo/su (veja o campo na UI — nao e reexibida depois)"
 fi
 
 HOME_DIR=$(getent passwd "$SS_USERNAME" | cut -d: -f6)
@@ -70,4 +92,4 @@ id "$SS_USERNAME" >/dev/null || fail "usuario nao foi criado corretamente"
 grep -qxF "$PUBLIC_KEY" "$AUTH_KEYS" || fail "chave nao esta em authorized_keys"
 
 echo "==> ok"
-result "ok" "usuario $SS_USERNAME pronto" "{\"username\":\"$SS_USERNAME\",\"fingerprint\":\"$FINGERPRINT\"}"
+result "ok" "usuario $SS_USERNAME pronto" "{\"username\":\"$SS_USERNAME\",\"fingerprint\":\"$FINGERPRINT\",\"password\":\"$(json_escape "$PASSWORD")\"}"
