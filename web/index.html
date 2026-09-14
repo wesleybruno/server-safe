@@ -8,7 +8,7 @@
 </head>
 <body>
 <header>
-  <h1>server-safe</h1>
+  <h1>server-safe <span id="app-version" class="version-badge"></span></h1>
   <p>configuracao inicial de servidor linux</p>
 </header>
 
@@ -31,6 +31,8 @@
   <ul id="db-steps" class="db-steps"></ul>
 </section>
 
+<div class="wizard">
+<nav id="step-nav" class="step-nav"></nav>
 <main>
   <section id="step-users" class="step">
     <h2>1. Usuario e chave SSH</h2>
@@ -202,6 +204,7 @@
     <pre class="log" id="cl-log"></pre>
   </section>
 </main>
+</div>
 
 <script src="/app.js"></script>
 </body>

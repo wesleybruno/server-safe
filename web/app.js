@@ -44,10 +44,49 @@ function appendLog(el, line) {
   el.scrollTop = el.scrollHeight;
 }
 
+function selectStep(stepSel) {
+  const panel = $(stepSel);
+  if (!panel || panel.classList.contains("disabled")) return;
+  document.querySelectorAll("main .step").forEach((p) => p.classList.remove("active"));
+  panel.classList.add("active");
+  document.querySelectorAll("#step-nav button").forEach((b) => {
+    b.classList.toggle("active", "#" + b.dataset.target === stepSel);
+  });
+}
+
+function setNavLocked(stepSel, locked) {
+  const btn = document.querySelector(`#step-nav button[data-target="${stepSel.replace(/^#/, "")}"]`);
+  if (btn) btn.disabled = locked;
+}
+
 function unlock(stepSel, btnSel) {
   $(stepSel).classList.remove("disabled");
   if (btnSel) $(btnSel).disabled = false;
+  setNavLocked(stepSel, false);
+  selectStep(stepSel);
 }
+
+// Nav a esquerda gerado a partir dos proprios steps (id + texto do h2) em
+// vez de duplicado no HTML — um so lugar pra manter em dia. Bloqueado ==
+// mesma classe "disabled" que ja governa os steps, so que agora tambem
+// controla se da pra navegar ate o painel (nao so o estilo).
+function buildStepNav() {
+  const nav = $("#step-nav");
+  const panels = document.querySelectorAll("main .step");
+  panels.forEach((panel) => {
+    const h2 = panel.querySelector("h2");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = h2 ? h2.textContent : panel.id;
+    btn.dataset.target = panel.id;
+    btn.disabled = panel.classList.contains("disabled");
+    btn.addEventListener("click", () => selectStep("#" + panel.id));
+    nav.appendChild(btn);
+  });
+  if (panels[0]) selectStep("#" + panels[0].id);
+}
+
+buildStepNav();
 
 const STEP_LABELS = {
   users: "Usuario e chave SSH",
@@ -91,6 +130,7 @@ async function refreshDashboard() {
   }
 
   document.title = "server-safe " + (data.version || "dev");
+  $("#app-version").textContent = data.version || "dev";
 
   setGauge("cpu", data.stats && data.stats.cpu_percent);
   setGauge("mem", data.stats && data.stats.mem_percent);

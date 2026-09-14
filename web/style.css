@@ -2,21 +2,78 @@
 
 body {
   font-family: system-ui, sans-serif;
-  max-width: 720px;
+  max-width: 960px;
   margin: 2rem auto;
   padding: 0 1rem;
 }
 
 header p { opacity: .7; margin-top: -.5rem; }
 
+.version-badge {
+  font-size: .8rem;
+  font-weight: normal;
+  font-family: ui-monospace, monospace;
+  background: #8882;
+  padding: .1rem .4rem;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.wizard {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.step-nav {
+  flex: 0 0 200px;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.step-nav button {
+  margin-top: 0;
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: .5rem .6rem;
+  font-size: .85rem;
+  color: inherit;
+}
+
+.step-nav button.active {
+  background: #8882;
+  border-color: #8886;
+  font-weight: 600;
+}
+
+.wizard main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .step {
+  display: none;
   border: 1px solid #8888;
   border-radius: 8px;
   padding: 1rem;
-  margin-bottom: 1rem;
 }
 
-.step.disabled { opacity: .5; pointer-events: none; }
+.step.active { display: block; }
+
+@media (max-width: 640px) {
+  .wizard { flex-direction: column; }
+  .step-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    position: static;
+    width: 100%;
+  }
+}
 
 .log {
   background: #1118;
