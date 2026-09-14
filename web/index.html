@@ -140,39 +140,39 @@
     <h2>7. Libs extras</h2>
 
     <div class="extra-item">
-      <p><strong>Docker</strong> — docker-ce + compose plugin, via repositorio oficial.</p>
+      <p><strong>Docker</strong> <span class="status-badge" id="ex-docker-status">nao instalado</span> — docker-ce + compose plugin, via repositorio oficial.</p>
       <button id="btn-install-docker">instalar docker</button>
       <pre class="log" id="ex-docker-log"></pre>
     </div>
 
     <div class="extra-item">
-      <p><strong>Portainer</strong> — UI de gerenciamento de containers. Painel em <code>127.0.0.1:9443</code>, acesse via tunel SSH.</p>
+      <p><strong>Portainer</strong> <span class="status-badge" id="ex-portainer-status">nao instalado</span> — UI de gerenciamento de containers. Painel em <code>127.0.0.1:9443</code>, acesse via tunel SSH.</p>
       <p class="warn">Depende do Docker (acima) ja instalado — o script confere e recusa se nao achar.</p>
       <button id="btn-install-portainer">instalar portainer</button>
       <pre class="log" id="ex-portainer-log"></pre>
     </div>
 
     <div class="extra-item">
-      <p><strong>Traefik</strong> — reverse proxy. Portas 80/443 publicas, dashboard em <code>127.0.0.1:8080</code> via tunel SSH.</p>
+      <p><strong>Traefik</strong> <span class="status-badge" id="ex-traefik-status">nao instalado</span> — reverse proxy. Portas 80/443 publicas, dashboard em <code>127.0.0.1:8080</code> via tunel SSH.</p>
       <p class="warn">Depende do Docker (acima) ja instalado — o script confere e recusa se nao achar.</p>
       <button id="btn-install-traefik">instalar traefik</button>
       <pre class="log" id="ex-traefik-log"></pre>
     </div>
 
     <div class="extra-item">
-      <p><strong>Coolify</strong> — PaaS self-hosted, instalador oficial (instala Docker sozinho se faltar).</p>
+      <p><strong>Coolify</strong> <span class="status-badge" id="ex-coolify-status">nao instalado</span> — PaaS self-hosted, instalador oficial (instala Docker sozinho se faltar).</p>
       <button id="btn-install-coolify">instalar coolify</button>
       <pre class="log" id="ex-coolify-log"></pre>
     </div>
 
     <div class="extra-item">
-      <p><strong>EasyPanel</strong> — painel de hospedagem, instalador oficial (instala Docker sozinho se faltar).</p>
+      <p><strong>EasyPanel</strong> <span class="status-badge" id="ex-easypanel-status">nao instalado</span> — painel de hospedagem, instalador oficial (instala Docker sozinho se faltar).</p>
       <button id="btn-install-easypanel">instalar easypanel</button>
       <pre class="log" id="ex-easypanel-log"></pre>
     </div>
 
     <div class="extra-item">
-      <p class="warn"><strong>cPanel/WHM</strong> — so AlmaLinux/CloudLinux/RHEL, exige licenca paga, demora 1-2h e assume controle total da maquina (proprio firewall/servicos). Dificil de reverter.</p>
+      <p class="warn"><strong>cPanel/WHM</strong> <span class="status-badge" id="ex-cpanel-status">nao instalado</span> — so AlmaLinux/CloudLinux/RHEL, exige licenca paga, demora 1-2h e assume controle total da maquina (proprio firewall/servicos). Dificil de reverter.</p>
       <button id="btn-install-cpanel">instalar cpanel</button>
       <pre class="log" id="ex-cpanel-log"></pre>
     </div>

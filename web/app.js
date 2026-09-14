@@ -87,6 +87,15 @@ function buildStepNav() {
 
 buildStepNav();
 
+const EXTRAS = {
+  docker: "/api/extras/docker",
+  portainer: "/api/extras/portainer",
+  traefik: "/api/extras/traefik",
+  coolify: "/api/extras/coolify",
+  easypanel: "/api/extras/easypanel",
+  cpanel: "/api/extras/cpanel",
+};
+
 const STEP_LABELS = {
   users: "Usuario e chave SSH",
   ssh: "Hardening SSH",
@@ -94,15 +103,22 @@ const STEP_LABELS = {
   fail2ban: "Fail2ban",
   updates: "Atualizacoes automaticas",
   timers: "Timers de app",
-  extras_docker: "Docker",
-  extras_portainer: "Portainer",
-  extras_traefik: "Traefik",
-  extras_coolify: "Coolify",
-  extras_easypanel: "EasyPanel",
-  extras_cpanel: "cPanel",
   audit: "Auditoria final",
   cleanup: "Limpeza final",
 };
+
+// Os extras (Docker/Portainer/...) nao aparecem no checklist do dashboard —
+// sao muitos e opcionais, o status de cada um fica na propria aba "Libs
+// extras" (setExtraStatuses), nao duplicado aqui em cima.
+function setExtraStatuses(done) {
+  Object.keys(EXTRAS).forEach((key) => {
+    const badge = $("#ex-" + key + "-status");
+    if (!badge) return;
+    const installed = !!done["extras_" + key];
+    badge.textContent = installed ? "instalado" : "nao instalado";
+    badge.classList.toggle("done", installed);
+  });
+}
 
 function setGauge(prefix, pct) {
   const val = typeof pct === "number" ? pct : parseFloat(pct);
@@ -135,15 +151,18 @@ async function refreshDashboard() {
   setGauge("mem", data.stats && data.stats.mem_percent);
   setGauge("disk", data.stats && data.stats.disk_percent);
 
-  const list = $("#db-steps");
-  const order = data.steps_order || [];
   const done = data.steps || {};
+
+  const list = $("#db-steps");
+  const order = (data.steps_order || []).filter((step) => !step.startsWith("extras_"));
   list.innerHTML = order
     .map((step) => {
       const label = STEP_LABELS[step] || step;
       return `<li class="${done[step] ? "done" : ""}">${label}</li>`;
     })
     .join("");
+
+  setExtraStatuses(done);
 }
 
 refreshDashboard();
@@ -355,15 +374,6 @@ $("#btn-add-timer").addEventListener("click", async () => {
   );
 });
 
-const EXTRAS = {
-  docker: "/api/extras/docker",
-  portainer: "/api/extras/portainer",
-  traefik: "/api/extras/traefik",
-  coolify: "/api/extras/coolify",
-  easypanel: "/api/extras/easypanel",
-  cpanel: "/api/extras/cpanel",
-};
-
 function wireExtraInstall(key, url) {
   const btn = $("#btn-install-" + key);
   const log = $("#ex-" + key + "-log");
@@ -378,6 +388,14 @@ function wireExtraInstall(key, url) {
       (result) => {
         appendLog(log, "== resultado: " + result.status + " - " + result.detail);
         btn.disabled = false;
+        // atualizacao otimista — o proximo poll do dashboard (ate 3s) confirma
+        if (result.status === "ok") {
+          const badge = $("#ex-" + key + "-status");
+          if (badge) {
+            badge.textContent = "instalado";
+            badge.classList.add("done");
+          }
+        }
       },
       (err) => {
         appendLog(log, "ERRO: " + err);
