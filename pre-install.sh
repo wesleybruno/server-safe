@@ -62,9 +62,17 @@ else
   echo "==> baixando go $GO_VERSION ($GO_ARCH)"
   curl -fsSL "$URL" -o "$TMP_DIR/$TARBALL"
 
-  if curl -fsSL "$URL.sha256" -o "$TMP_DIR/$TARBALL.sha256" 2>/dev/null; then
-    echo "$(cat "$TMP_DIR/$TARBALL.sha256")  $TMP_DIR/$TARBALL" | sha256sum -c - >/dev/null \
-      || { echo "checksum do tarball do go nao confere, abortando" >&2; exit 1; }
+  # go.dev/dl/<arquivo>.sha256 redireciona pra uma pagina HTML, nao serve o
+  # hash cru — dl.google.com (o storage por tras do go.dev/dl) serve. Compara
+  # na mao em vez de `sha256sum -c` pra nao depender do formato exato do
+  # arquivo remoto (so o hash, sem nome de arquivo junto).
+  if curl -fsSL "https://dl.google.com/go/$TARBALL.sha256" -o "$TMP_DIR/$TARBALL.sha256" 2>/dev/null; then
+    EXPECTED_SHA=$(awk '{print $1}' "$TMP_DIR/$TARBALL.sha256")
+    ACTUAL_SHA=$(sha256sum "$TMP_DIR/$TARBALL" | awk '{print $1}')
+    if [[ -z "$EXPECTED_SHA" || "$EXPECTED_SHA" != "$ACTUAL_SHA" ]]; then
+      echo "checksum do tarball do go nao confere (esperado ${EXPECTED_SHA:-vazio}, obtido $ACTUAL_SHA), abortando" >&2
+      exit 1
+    fi
   else
     echo "aviso: nao consegui baixar o checksum oficial, seguindo sem verificar" >&2
   fi
