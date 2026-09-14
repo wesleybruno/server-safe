@@ -4,7 +4,15 @@
 set -euo pipefail
 
 result() {
-  local status="$1" detail="$2" data="${3:-{}}"
+  local status="$1" detail="$2" data="$3"
+  # `data="${3:-{}}"` (o jeito "obvio") parseia errado: o bash acha o `}`
+  # de dentro do valor-padrao como o fechamento do `${...}`, sobra um `}`
+  # solto grudado no fim — quebra o data de QUALQUER chamada, nao so
+  # quando o default entra em jogo. `if` em vez de expansao evita a
+  # armadilha de parsing.
+  if [[ -z "$data" ]]; then
+    data="{}"
+  fi
   printf 'RESULT_JSON:{"status":"%s","detail":"%s","data":%s}\n' "$status" "$detail" "$data"
 }
 
