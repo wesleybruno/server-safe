@@ -64,7 +64,11 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable --now server-safe
+systemctl enable server-safe
+# restart, nao "enable --now": num reinstall (binario novo sobrescrito em
+# /usr/local/bin) o servico ja esta ativo, e "--now" so faz start (no-op se
+# ja rodando) — o processo antigo ficaria no ar servindo o binario velho.
+systemctl restart server-safe
 
 echo "==> pronto"
 echo "acesse via tunel SSH (a maquina so escuta em localhost):"

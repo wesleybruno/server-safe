@@ -90,6 +90,8 @@ async function refreshDashboard() {
     return;
   }
 
+  document.title = "server-safe " + (data.version || "dev");
+
   setGauge("cpu", data.stats && data.stats.cpu_percent);
   setGauge("mem", data.stats && data.stats.mem_percent);
   setGauge("disk", data.stats && data.stats.disk_percent);

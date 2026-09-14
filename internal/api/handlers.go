@@ -14,6 +14,7 @@ import (
 type Handlers struct {
 	KeyStore *keystore.Store
 	Progress *progress.Tracker
+	Version  string
 }
 
 // markOK returns a runStreamed onDone callback that records step as done
@@ -225,5 +226,6 @@ func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 		"stats":       stats,
 		"steps":       h.Progress.Snapshot(),
 		"steps_order": progress.Steps,
+		"version":     h.Version,
 	})
 }

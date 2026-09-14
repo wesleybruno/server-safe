@@ -20,6 +20,11 @@ import (
 	"server-safe/web"
 )
 
+// version is overridden at build time via -ldflags "-X main.version=vX.Y.Z"
+// (see .github/workflows/release.yml). Local `go build`/`go run` without
+// that flag keeps the "dev" default.
+var version = "dev"
+
 func main() {
 	addr := flag.String("addr", "127.0.0.1:8080", "endereco de escuta (host:porta)")
 	keyDir := flag.String("keydir", "/dev/shm/server-safe", "diretorio tmpfs para chaves privadas temporarias")
@@ -40,7 +45,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.FS(webFS)))
-	api.RegisterRoutes(mux, ks, pt)
+	api.RegisterRoutes(mux, ks, pt, version)
 
 	srv := &http.Server{Addr: *addr, Handler: mux}
 

@@ -9,8 +9,8 @@ import (
 
 // RegisterRoutes adds server-safe's API endpoints onto an existing mux, so
 // the caller can also mount the static web UI at "/" on the same mux.
-func RegisterRoutes(mux *http.ServeMux, ks *keystore.Store, pt *progress.Tracker) {
-	h := &Handlers{KeyStore: ks, Progress: pt}
+func RegisterRoutes(mux *http.ServeMux, ks *keystore.Store, pt *progress.Tracker, version string) {
+	h := &Handlers{KeyStore: ks, Progress: pt, Version: version}
 	mux.HandleFunc("POST /api/users/create", h.CreateUser)
 	mux.HandleFunc("GET /download/key/{token}", h.DownloadKey)
 	mux.HandleFunc("POST /api/ssh/harden", h.HardenSSH)
