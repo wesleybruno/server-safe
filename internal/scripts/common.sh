@@ -22,6 +22,19 @@ fail() {
   exit 1
 }
 
+# random_password: 20 chars, sem caracteres ambiguos (sem 0/O/1/l/I) pra
+# facilitar copiar/ler na tela. $RANDOM (builtin do bash) em vez de
+# /dev/urandom + head: sob o `set -o pipefail` acima, head fechando o pipe
+# cedo manda SIGPIPE pro gerador e aborta o script.
+random_password() {
+  local chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+  local pass="" i
+  for ((i = 0; i < 20; i++)); do
+    pass+="${chars:RANDOM % ${#chars}:1}"
+  done
+  printf '%s' "$pass"
+}
+
 # json_escape <string> -> safe to embed inside a JSON string literal
 json_escape() {
   local s="$1"

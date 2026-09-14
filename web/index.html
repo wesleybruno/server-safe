@@ -177,7 +177,7 @@
           </div>
           <div class="extra-info">
             <h3>Traefik <svg class="check-icon" id="ex-traefik-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
-            <p>Reverse proxy. Portas 80/443 publicas, dashboard em <code>127.0.0.1:8080</code> via tunel SSH. Instala o Docker junto se precisar.</p>
+            <p>Reverse proxy. Portas 80/443 publicas, dashboard em <code>127.0.0.1:8090</code> via tunel SSH. Instala o Docker junto se precisar.</p>
           </div>
         </div>
         <button id="btn-install-traefik">instalar</button>
@@ -223,6 +223,62 @@
         </div>
         <button id="btn-install-cpanel">instalar</button>
         <pre class="log" id="ex-cpanel-log"></pre>
+      </div>
+
+      <div class="extra-card">
+        <div class="extra-card-head">
+          <div class="extra-icon" style="--brand:#00AB44">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14.764 21.827H9.922L0 2.173h14.084c5.476.01 9.913 4.565 9.916 10.183-.009 5.235-4.14 9.47-9.238 9.47z"/></svg>
+          </div>
+          <div class="extra-info">
+            <h3>Netdata <svg class="check-icon" id="ex-netdata-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
+            <p>Monitoramento em tempo real (CPU/mem/disco/rede). Painel em <code>127.0.0.1:19999</code>, via tunel SSH. Instala o Docker junto se precisar.</p>
+          </div>
+        </div>
+        <button id="btn-install-netdata">instalar</button>
+        <pre class="log" id="ex-netdata-log"></pre>
+      </div>
+
+      <div class="extra-card">
+        <div class="extra-card-head">
+          <div class="extra-icon extra-icon-mono" style="--brand:#0EA5A5">DZ</div>
+          <div class="extra-info">
+            <h3>Dozzle <svg class="check-icon" id="ex-dozzle-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
+            <p>Visualizador de logs dos containers Docker em tempo real. Painel em <code>127.0.0.1:8081</code>, via tunel SSH. Instala o Docker junto se precisar.</p>
+          </div>
+        </div>
+        <button id="btn-install-dozzle">instalar</button>
+        <pre class="log" id="ex-dozzle-log"></pre>
+      </div>
+
+      <div class="extra-card extra-card-wide">
+        <div class="extra-card-head">
+          <div class="extra-icon extra-icon-mono" style="--brand:#E8622C">RS</div>
+          <div class="extra-info">
+            <h3>Restic <svg class="check-icon" id="ex-restic-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
+            <p>Backup automatico agendado (systemd timer). Retencao fixa: 7 diarios, 4 semanais, 6 mensais.</p>
+          </div>
+        </div>
+        <label>Repositorio (path local, ou <code>sftp:</code>/<code>s3:</code>/<code>b2:</code>...)
+          <input id="rs-repo" type="text" placeholder="/var/backups/restic">
+        </label>
+        <label>Paths pra backup (separados por virgula)
+          <input id="rs-paths" type="text" placeholder="/etc,/home,/root">
+        </label>
+        <label>Agenda (OnCalendar do systemd)
+          <input id="rs-schedule" type="text" placeholder="daily" value="daily">
+        </label>
+        <button id="btn-install-restic">configurar backup</button>
+        <pre class="log" id="ex-restic-log"></pre>
+
+        <div id="rs-password-box" class="hidden">
+          <p>Senha do repositorio restic (sem ela os backups ficam ilegiveis pra sempre):</p>
+          <div class="copy-row">
+            <input id="rs-password-value" type="text" readonly>
+            <button id="rs-password-copy" type="button">Copiar senha</button>
+          </div>
+          <p class="warn">Anote agora — não fica salva em lugar nenhum visivel e não é reexibida depois.</p>
+        </div>
       </div>
     </div>
 

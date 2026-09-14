@@ -397,6 +397,16 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   margin-top: 1rem;
 }
 
+/* dentro de .extra-card (que ja usa --surface-2 de fundo), precisa do
+   nivel oposto (--surface) pra destacar, senao some contra o card */
+#rs-password-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .85rem 1rem;
+  margin-top: .5rem;
+}
+
 #u-download code, .extra-card code {
   font-family: var(--font-mono);
   font-size: .85em;
@@ -419,6 +429,10 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1rem;
 }
+
+/* Restic tem campos proprios (repo/paths/agenda) — precisa de mais largura
+   que os cards de um botao so. */
+.extra-card-wide { grid-column: 1 / -1; max-width: 480px; }
 
 .extra-card {
   display: flex;

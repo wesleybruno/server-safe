@@ -50,6 +50,15 @@ var EasyPanelInstall []byte
 //go:embed cpanel-install.sh
 var CPanelInstall []byte
 
+//go:embed dozzle-install.sh
+var DozzleInstall []byte
+
+//go:embed netdata-install.sh
+var NetdataInstall []byte
+
+//go:embed restic-setup.sh
+var ResticSetup []byte
+
 //go:embed dashboard-stats.sh
 var DashboardStats []byte
 

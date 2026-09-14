@@ -81,6 +81,10 @@ function buildStepNav() {
 
 buildStepNav();
 
+// Extras que so precisam de um clique (sem parametros), via
+// wireExtraInstall. Restic fica de fora — tem campos proprios (repo/paths/
+// agenda), wiring dedicado mais abaixo — mas ainda conta como extra pra
+// efeito do check de status (ver EXTRA_KEYS).
 const EXTRAS = {
   docker: "/api/extras/docker",
   portainer: "/api/extras/portainer",
@@ -88,7 +92,11 @@ const EXTRAS = {
   coolify: "/api/extras/coolify",
   easypanel: "/api/extras/easypanel",
   cpanel: "/api/extras/cpanel",
+  dozzle: "/api/extras/dozzle",
+  netdata: "/api/extras/netdata",
 };
+
+const EXTRA_KEYS = [...Object.keys(EXTRAS), "restic"];
 
 const STEP_LABELS = {
   users: "Usuario e chave SSH",
@@ -106,7 +114,7 @@ const STEP_LABELS = {
 // aba "Libs extras" (setExtraStatuses): um check ao lado do nome quando
 // instalado, nada quando nao — sem badge/texto "nao instalado" poluindo.
 function setExtraStatuses(done) {
-  Object.keys(EXTRAS).forEach((key) => {
+  EXTRA_KEYS.forEach((key) => {
     const check = $("#ex-" + key + "-check");
     if (check) check.hidden = !done["extras_" + key];
   });
@@ -371,7 +379,7 @@ function wireExtraInstall(key, url) {
         // Portainer/Traefik/Coolify/EasyPanel instalam o Docker junto se
         // precisar, entao o check do Docker acompanha o deles tambem.
         if (result.status === "ok") {
-          const dependsOnDocker = ["portainer", "traefik", "coolify", "easypanel"];
+          const dependsOnDocker = ["portainer", "traefik", "coolify", "easypanel", "dozzle", "netdata"];
           const keys = dependsOnDocker.includes(key) ? [key, "docker"] : [key];
           keys.forEach((k) => {
             const check = $("#ex-" + k + "-check");
@@ -388,6 +396,55 @@ function wireExtraInstall(key, url) {
 }
 
 Object.entries(EXTRAS).forEach(([key, url]) => wireExtraInstall(key, url));
+
+$("#rs-password-copy").addEventListener("click", async () => {
+  const input = $("#rs-password-value");
+  input.select();
+  try {
+    await navigator.clipboard.writeText(input.value);
+    const btn = $("#rs-password-copy");
+    const original = btn.textContent;
+    btn.textContent = "copiado!";
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch {
+    // input.select() acima ja deixa selecionado pra copiar na mao (Ctrl+C)
+  }
+});
+
+$("#btn-install-restic").addEventListener("click", async () => {
+  const repo = $("#rs-repo").value.trim();
+  const paths = $("#rs-paths").value.trim();
+  const schedule = $("#rs-schedule").value.trim() || "daily";
+  if (!repo || !paths) { alert("preencha repositorio e paths"); return; }
+
+  const btn = $("#btn-install-restic");
+  const log = $("#ex-restic-log");
+  log.textContent = "";
+  btn.disabled = true;
+
+  await streamRequest(
+    "/api/extras/restic",
+    { repo, paths, schedule },
+    (line) => appendLog(log, line),
+    (result) => {
+      appendLog(log, "== resultado: " + result.status + " - " + result.detail);
+      btn.disabled = false;
+      if (result.status === "ok") {
+        const check = $("#ex-restic-check");
+        if (check) check.hidden = false;
+        const password = result.data && result.data.password;
+        if (password) {
+          $("#rs-password-box").classList.remove("hidden");
+          $("#rs-password-value").value = password;
+        }
+      }
+    },
+    (err) => {
+      appendLog(log, "ERRO: " + err);
+      btn.disabled = false;
+    }
+  );
+});
 
 // Unicos lugares que trocam de etapa por conta propria: o usuario clicou
 // num botao "continuar" explicito, o que conta como ele escolhendo

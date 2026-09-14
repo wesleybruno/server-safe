@@ -21,6 +21,9 @@ var Steps = []string{
 	"extras_coolify",
 	"extras_easypanel",
 	"extras_cpanel",
+	"extras_dozzle",
+	"extras_netdata",
+	"extras_restic",
 	"audit",
 	"cleanup",
 }

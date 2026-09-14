@@ -10,19 +10,6 @@ if [[ ! "$SS_USERNAME" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]]; then
   fail "username invalido: $SS_USERNAME"
 fi
 
-# $RANDOM (builtin do bash) em vez de /dev/urandom + head: sob o
-# `set -o pipefail` do common.sh, head fechando o pipe cedo manda SIGPIPE
-# pro gerador e aborta o script. Alfabeto sem caracteres ambiguos (sem
-# 0/O/1/l/I) pra facilitar copiar/ler na tela.
-generate_local_password() {
-  local chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
-  local pass="" i
-  for ((i = 0; i < 20; i++)); do
-    pass+="${chars:RANDOM % ${#chars}:1}"
-  done
-  printf '%s' "$pass"
-}
-
 if id "$SS_USERNAME" &>/dev/null; then
   echo "==> usuario ja existe, pulando useradd"
 else
@@ -45,7 +32,7 @@ fi
 PASSWORD=""
 PW_STATUS=$(passwd -S "$SS_USERNAME" 2>/dev/null | awk '{print $2}')
 if [[ "$PW_STATUS" != "P" ]]; then
-  PASSWORD=$(generate_local_password)
+  PASSWORD=$(random_password)
   echo "$SS_USERNAME:$PASSWORD" | chpasswd
   echo "==> senha local gerada para sudo/su (veja o campo na UI — nao e reexibida depois)"
 else

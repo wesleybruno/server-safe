@@ -33,28 +33,32 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 | 4 | Fail2ban | Jail do sshd configurável (bantime / findtime / maxretry) |
 | 5 | Atualizações automáticas | `unattended-upgrades` (Debian/Ubuntu) ou `dnf-automatic` (RHEL/Fedora) |
 | 6 | Timers de app | Cria par `.service`/`.timer` do systemd genérico, para restart periódico de qualquer serviço |
-| 7 | Libs extras | Instala libs adicionais, uma por botão: Docker, Portainer, Traefik, Coolify, EasyPanel, cPanel/WHM |
+| 7 | Libs extras | Instala libs adicionais, uma por botão: Docker, Portainer, Traefik, Coolify, EasyPanel, cPanel/WHM, Netdata, Dozzle; Restic tem campos próprios (repo/paths/agenda) pra backup automático |
 | 8 | Auditoria final | Checa portas expostas pra fora (loopback fica de fora da lista), sudoers com NOPASSWD, contas com UID 0 extra, permissões de `.ssh`, roda `lynis` se disponível |
 | 9 | Limpeza | Agenda o self-destruct do painel + remoção de arquivos temporários |
 
 ## Acesso via túnel SSH
 
-Painel server-safe e as UIs de admin dos extras (Portainer, dashboard do Traefik) só escutam em `127.0.0.1` na máquina — de propósito, nunca expostos direto na internet. Acesso sempre via túnel SSH, um `-L` por porta que você for usar:
+Painel server-safe e as UIs de admin dos extras (Portainer, Traefik, Netdata, Dozzle) só escutam em `127.0.0.1` na máquina — de propósito, nunca expostos direto na internet. Acesso sempre via túnel SSH, um `-L` por porta que você for usar:
 
 ```bash
 ssh -L 8080:127.0.0.1:8080 \
     -L 9443:127.0.0.1:9443 \
-    -L 8888:127.0.0.1:8080 \
+    -L 8090:127.0.0.1:8090 \
+    -L 19999:127.0.0.1:19999 \
+    -L 8081:127.0.0.1:8081 \
     usuario@servidor
 ```
 
-| Porta local | Aponta pra | Serviço |
-|---|---|---|
-| `8080` | `127.0.0.1:8080` no servidor | painel server-safe → `http://127.0.0.1:8080` |
-| `9443` | `127.0.0.1:9443` no servidor | Portainer (se instalado) → `https://127.0.0.1:9443` |
-| `8888` | `127.0.0.1:8080` no servidor | dashboard Traefik (se instalado) → `http://127.0.0.1:8888` — porta local diferente pra não colidir com o painel |
+| Porta | Serviço |
+|---|---|
+| `8080` | painel server-safe → `http://127.0.0.1:8080` |
+| `9443` | Portainer (se instalado) → `https://127.0.0.1:9443` |
+| `8090` | dashboard Traefik (se instalado) → `http://127.0.0.1:8090` — não é 8080 de propósito, já é o painel |
+| `19999` | Netdata (se instalado) → `http://127.0.0.1:19999` |
+| `8081` | Dozzle (se instalado) → `http://127.0.0.1:8081` |
 
-Só inclua os `-L` dos serviços que você de fato instalou. Deixe o terminal do SSH aberto enquanto usa.
+Só inclua os `-L` dos serviços que você de fato instalou. Deixe o terminal do SSH aberto enquanto usa. Restic não entra nessa lista — não tem UI web, é só backup agendado (`systemctl list-timers`/`journalctl -u server-safe-restic-backup` pra acompanhar).
 
 ## Segurança da chave SSH gerada
 
@@ -69,6 +73,12 @@ O usuário criado no step 1 não tem senha nenhuma por padrão — login SSH é 
 Essa senha só vale pra `sudo`/`su` local — não muda nada no SSH (se o step 2 desativar login por senha, isso continua bloqueado). É defesa extra: mesmo que a chave SSH vaze ou uma sessão seja sequestrada, ainda precisa da senha pra virar root.
 
 Alternativa (não usada aqui de propósito): configurar `NOPASSWD` no sudoers pra não precisar de senha nenhuma. O próprio step 8 (auditoria) do wizard reporta isso como warning (`sudo-nopasswd`), então essa ferramenta não empurra esse caminho por padrão.
+
+## Backup automático (Restic)
+
+O extra Restic (etapa 7) instala o `restic`, inicializa o repositório informado (aceita path local, `sftp:`, `s3:`, `b2:`, qualquer sintaxe que o restic entenda — a UI não tem formulário por provedor, é a mesma string que você usaria no `restic -r`) e agenda backup + `forget --prune` (retenção fixa: 7 diários, 4 semanais, 6 mensais) via `systemd timer`.
+
+A senha do repositório é gerada uma vez (mesma lógica da senha do usuário: 20 caracteres, mostrada uma única vez na UI com botão de copiar) e fica em `/etc/restic/password` (`600`, só root). **Sem essa senha os backups ficam ilegíveis pra sempre** — anote assim que aparecer na tela, não tem como recuperar depois.
 
 ## Proteções anti-lockout
 
