@@ -9,6 +9,36 @@ if ! [[ "$SS_NEW_PORT" =~ ^[0-9]+$ ]] || (( SS_NEW_PORT < 1 || SS_NEW_PORT > 655
   fail "porta invalida: $SS_NEW_PORT"
 fi
 
+if [[ "$DISABLE_PASSWORD" == "true" ]]; then
+  # Anti-lockout tecnico: sem pelo menos uma chave publica instalada em
+  # algum usuario sudo/wheel (ou root), desativar login por senha agora
+  # trancaria todo mundo fora — nem chave, nem senha. Isso nao depende do
+  # checkbox "ja testei a chave" da UI (autodeclarado); aqui e checagem
+  # real do estado do sistema. Roda antes do wizard ter uma etapa
+  # dedicada de "usuario" ser obrigatoria, ja que agora todas as etapas
+  # ficam acessiveis sem ordem forcada.
+  SUDO_GROUP=""
+  if getent group sudo &>/dev/null; then
+    SUDO_GROUP="sudo"
+  elif getent group wheel &>/dev/null; then
+    SUDO_GROUP="wheel"
+  fi
+  HAS_KEY="false"
+  if [[ -n "$SUDO_GROUP" ]]; then
+    for u in $(getent group "$SUDO_GROUP" | cut -d: -f4 | tr ',' ' '); do
+      home=$(getent passwd "$u" 2>/dev/null | cut -d: -f6)
+      if [[ -n "$home" && -s "$home/.ssh/authorized_keys" ]]; then
+        HAS_KEY="true"
+        break
+      fi
+    done
+  fi
+  if [[ "$HAS_KEY" != "true" && -s /root/.ssh/authorized_keys ]]; then
+    HAS_KEY="true"
+  fi
+  [[ "$HAS_KEY" == "true" ]] || fail "nenhum usuario sudo/wheel (nem root) tem chave publica em authorized_keys — desativar login por senha agora te trancaria fora. Rode a etapa 'Usuario e chave SSH' antes."
+fi
+
 MAIN_CONFIG="/etc/ssh/sshd_config"
 DROPIN_DIR="/etc/ssh/sshd_config.d"
 # 00- (nao 99-): dentro de sshd_config.d, a *primeira* ocorrencia de uma

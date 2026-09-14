@@ -44,9 +44,16 @@ function appendLog(el, line) {
   el.scrollTop = el.scrollHeight;
 }
 
+// Todas as etapas ficam sempre navegaveis e clicaveis — nao ha mais trava
+// client-side. Etapas com dependencia real de uma anterior mostram um
+// aviso (.warn) no proprio painel, e o backend confere de verdade na hora
+// de executar (ex: ssh-harden.sh recusa desativar senha sem chave
+// instalada; firewall-ufw.sh recusa sem sshd escutando na porta nova;
+// portainer/traefik recusam sem Docker instalado) — a UI so orienta,
+// quem garante e o script.
 function selectStep(stepSel) {
   const panel = $(stepSel);
-  if (!panel || panel.classList.contains("disabled")) return;
+  if (!panel) return;
   document.querySelectorAll("main .step").forEach((p) => p.classList.remove("active"));
   panel.classList.add("active");
   document.querySelectorAll("#step-nav button").forEach((b) => {
@@ -54,22 +61,15 @@ function selectStep(stepSel) {
   });
 }
 
-function setNavLocked(stepSel, locked) {
-  const btn = document.querySelector(`#step-nav button[data-target="${stepSel.replace(/^#/, "")}"]`);
-  if (btn) btn.disabled = locked;
-}
-
-function unlock(stepSel, btnSel) {
-  $(stepSel).classList.remove("disabled");
-  if (btnSel) $(btnSel).disabled = false;
-  setNavLocked(stepSel, false);
+// Mantido pelo nome por compatibilidade com os callbacks de sucesso de
+// cada step (so navega ate a proxima etapa depois de uma acao bem
+// sucedida, nao "destrava" mais nada).
+function unlock(stepSel) {
   selectStep(stepSel);
 }
 
 // Nav a esquerda gerado a partir dos proprios steps (id + texto do h2) em
-// vez de duplicado no HTML — um so lugar pra manter em dia. Bloqueado ==
-// mesma classe "disabled" que ja governa os steps, so que agora tambem
-// controla se da pra navegar ate o painel (nao so o estilo).
+// vez de duplicado no HTML — um so lugar pra manter em dia.
 function buildStepNav() {
   const nav = $("#step-nav");
   const panels = document.querySelectorAll("main .step");
@@ -79,7 +79,6 @@ function buildStepNav() {
     btn.type = "button";
     btn.textContent = h2 ? h2.textContent : panel.id;
     btn.dataset.target = panel.id;
-    btn.disabled = panel.classList.contains("disabled");
     btn.addEventListener("click", () => selectStep("#" + panel.id));
     nav.appendChild(btn);
   });
@@ -391,12 +390,11 @@ function wireExtraInstall(key, url) {
 Object.entries(EXTRAS).forEach(([key, url]) => wireExtraInstall(key, url));
 
 $("#btn-continue-timers").addEventListener("click", () => {
-  unlock("#step-extras", null);
-  Object.keys(EXTRAS).forEach((key) => { $("#btn-install-" + key).disabled = false; });
+  unlock("#step-extras");
 });
 
 $("#btn-continue-extras").addEventListener("click", () => {
-  unlock("#step-audit", "#btn-audit");
+  unlock("#step-audit");
 });
 
 $("#btn-audit").addEventListener("click", async () => {

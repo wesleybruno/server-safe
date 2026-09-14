@@ -65,32 +65,35 @@
     <pre class="log" id="u-log"></pre>
   </section>
 
-  <section id="step-ssh" class="step disabled">
+  <section id="step-ssh" class="step">
     <h2>2. Hardening SSH</h2>
+    <p class="warn">Depende da etapa 1 (usuario + chave) ja estar pronta — se marcar "desativar login por senha" sem nenhuma chave instalada em usuario sudo/root, o script recusa (checagem automatica).</p>
     <label>Porta nova
       <input id="s-port" type="number" value="2222">
     </label>
     <label><input type="checkbox" id="s-disable-password"> desativar login por senha</label>
     <label><input type="checkbox" id="s-disable-root"> desativar login root</label>
     <p class="warn">confirme que a conexao com a chave nova funciona antes de desativar a senha — nao feche este terminal.</p>
-    <button id="btn-harden-ssh" disabled>aplicar</button>
+    <button id="btn-harden-ssh">aplicar</button>
     <pre class="log" id="s-log"></pre>
   </section>
 
-  <section id="step-firewall" class="step disabled">
+  <section id="step-firewall" class="step">
     <h2>3. Firewall (UFW)</h2>
+    <p class="warn">Depende da etapa 2 (SSH) ja aplicada — o script confere (ss -tln) se o sshd ja esta escutando na porta informada antes de ativar a politica deny-default, e recusa se nao estiver.</p>
     <label>Porta SSH a liberar
       <input id="fw-ssh-port" type="number" value="2222">
     </label>
     <label>Portas extras (opcional, separadas por virgula)
       <input id="fw-extra-ports" type="text" placeholder="80/tcp,443/tcp">
     </label>
-    <button id="btn-firewall" disabled>ativar firewall</button>
+    <button id="btn-firewall">ativar firewall</button>
     <pre class="log" id="fw-log"></pre>
   </section>
 
-  <section id="step-fail2ban" class="step disabled">
+  <section id="step-fail2ban" class="step">
     <h2>4. Fail2ban</h2>
+    <p class="warn">Recomendado rodar depois da etapa 3 (Firewall), pra usar a mesma porta SSH — nao e obrigatorio, mas monitorar a porta errada nao serve de nada.</p>
     <label>Porta SSH monitorada
       <input id="f2b-ssh-port" type="number" value="2222">
     </label>
@@ -103,21 +106,21 @@
     <label>Maxretry
       <input id="f2b-maxretry" type="number" value="5">
     </label>
-    <button id="btn-fail2ban" disabled>ativar fail2ban</button>
+    <button id="btn-fail2ban">ativar fail2ban</button>
     <pre class="log" id="f2b-log"></pre>
   </section>
 
-  <section id="step-updates" class="step disabled">
+  <section id="step-updates" class="step">
     <h2>5. Atualizacoes automaticas</h2>
     <label><input type="checkbox" id="upd-auto-reboot"> reiniciar automaticamente quando o kernel exigir</label>
     <label>Horario do reboot (se marcado acima)
       <input id="upd-reboot-time" type="text" value="04:00">
     </label>
-    <button id="btn-updates" disabled>ativar atualizacoes automaticas</button>
+    <button id="btn-updates">ativar atualizacoes automaticas</button>
     <pre class="log" id="upd-log"></pre>
   </section>
 
-  <section id="step-timers" class="step disabled">
+  <section id="step-timers" class="step">
     <h2>6. Timers de restart de app (opcional)</h2>
     <label>Nome do timer
       <input id="tm-name" type="text" placeholder="minha-api">
@@ -133,61 +136,63 @@
     <button id="btn-continue-timers">continuar (sem adicionar mais timers)</button>
   </section>
 
-  <section id="step-extras" class="step disabled">
+  <section id="step-extras" class="step">
     <h2>7. Libs extras</h2>
 
     <div class="extra-item">
       <p><strong>Docker</strong> — docker-ce + compose plugin, via repositorio oficial.</p>
-      <button id="btn-install-docker" disabled>instalar docker</button>
+      <button id="btn-install-docker">instalar docker</button>
       <pre class="log" id="ex-docker-log"></pre>
     </div>
 
     <div class="extra-item">
-      <p><strong>Portainer</strong> — UI de gerenciamento de containers (requer Docker acima). Painel em <code>127.0.0.1:9443</code>, acesse via tunel SSH.</p>
-      <button id="btn-install-portainer" disabled>instalar portainer</button>
+      <p><strong>Portainer</strong> — UI de gerenciamento de containers. Painel em <code>127.0.0.1:9443</code>, acesse via tunel SSH.</p>
+      <p class="warn">Depende do Docker (acima) ja instalado — o script confere e recusa se nao achar.</p>
+      <button id="btn-install-portainer">instalar portainer</button>
       <pre class="log" id="ex-portainer-log"></pre>
     </div>
 
     <div class="extra-item">
-      <p><strong>Traefik</strong> — reverse proxy (requer Docker acima). Portas 80/443 publicas, dashboard em <code>127.0.0.1:8080</code> via tunel SSH.</p>
-      <button id="btn-install-traefik" disabled>instalar traefik</button>
+      <p><strong>Traefik</strong> — reverse proxy. Portas 80/443 publicas, dashboard em <code>127.0.0.1:8080</code> via tunel SSH.</p>
+      <p class="warn">Depende do Docker (acima) ja instalado — o script confere e recusa se nao achar.</p>
+      <button id="btn-install-traefik">instalar traefik</button>
       <pre class="log" id="ex-traefik-log"></pre>
     </div>
 
     <div class="extra-item">
       <p><strong>Coolify</strong> — PaaS self-hosted, instalador oficial (instala Docker sozinho se faltar).</p>
-      <button id="btn-install-coolify" disabled>instalar coolify</button>
+      <button id="btn-install-coolify">instalar coolify</button>
       <pre class="log" id="ex-coolify-log"></pre>
     </div>
 
     <div class="extra-item">
       <p><strong>EasyPanel</strong> — painel de hospedagem, instalador oficial (instala Docker sozinho se faltar).</p>
-      <button id="btn-install-easypanel" disabled>instalar easypanel</button>
+      <button id="btn-install-easypanel">instalar easypanel</button>
       <pre class="log" id="ex-easypanel-log"></pre>
     </div>
 
     <div class="extra-item">
       <p class="warn"><strong>cPanel/WHM</strong> — so AlmaLinux/CloudLinux/RHEL, exige licenca paga, demora 1-2h e assume controle total da maquina (proprio firewall/servicos). Dificil de reverter.</p>
-      <button id="btn-install-cpanel" disabled>instalar cpanel</button>
+      <button id="btn-install-cpanel">instalar cpanel</button>
       <pre class="log" id="ex-cpanel-log"></pre>
     </div>
 
     <button id="btn-continue-extras">continuar</button>
   </section>
 
-  <section id="step-audit" class="step disabled">
+  <section id="step-audit" class="step">
     <h2>8. Auditoria final de seguranca</h2>
     <label>Porta SSH esperada (opcional, refina a checagem)
       <input id="au-ssh-port" type="number" value="2222">
     </label>
-    <button id="btn-audit" disabled>rodar auditoria</button>
+    <button id="btn-audit">rodar auditoria</button>
     <pre class="log" id="au-log"></pre>
     <pre class="log" id="au-report"></pre>
   </section>
 
-  <section id="step-cleanup" class="step disabled">
+  <section id="step-cleanup" class="step">
     <h2>9. Limpeza final</h2>
-    <p class="warn">agenda a remocao do binario/instalador e o auto-desligamento deste painel apos o delay escolhido.</p>
+    <p class="warn">agenda a remocao do binario/instalador e o auto-desligamento deste painel apos o delay escolhido — confirme que ja terminou as outras etapas que queria rodar antes de agendar.</p>
     <label>Delay
       <select id="cl-delay">
         <option value="1min">1 minuto</option>
@@ -199,7 +204,7 @@
       <input id="cl-paths" type="text" placeholder="/root/server-safe">
     </label>
     <label><input type="checkbox" id="cl-self-destruct" checked> parar e remover o servico server-safe (self-destruct)</label>
-    <button id="btn-cleanup" disabled>agendar limpeza final</button>
+    <button id="btn-cleanup">agendar limpeza final</button>
     <pre class="log" id="cl-log"></pre>
   </section>
 </main>
