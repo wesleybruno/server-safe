@@ -25,6 +25,18 @@ import (
 // that flag keeps the "dev" default.
 var version = "dev"
 
+// noCache forces the browser to always revalidate the embedded web assets.
+// embed.FS reports a zero ModTime for every file, so http.FileServer sends
+// no Last-Modified/ETag — without this, browsers can keep serving a stale
+// cached index.html/app.js indefinitely across binary upgrades, since there
+// is nothing telling them the content changed.
+func noCache(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		h.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	addr := flag.String("addr", "127.0.0.1:8080", "endereco de escuta (host:porta)")
 	keyDir := flag.String("keydir", "/dev/shm/server-safe", "diretorio tmpfs para chaves privadas temporarias")
@@ -44,7 +56,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.FS(webFS)))
+	mux.Handle("/", noCache(http.FileServer(http.FS(webFS))))
 	api.RegisterRoutes(mux, ks, pt, version)
 
 	srv := &http.Server{Addr: *addr, Handler: mux}
