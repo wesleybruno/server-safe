@@ -55,6 +55,10 @@ else
   TMP_DIR="$(mktemp -d)"
   trap 'rm -rf "$TMP_DIR"' EXIT
 
+  if ! getent hosts go.dev &>/dev/null; then
+    echo "aviso: DNS nao resolve go.dev — confira /etc/resolv.conf e a rede antes de tentar de novo" >&2
+  fi
+
   echo "==> baixando go $GO_VERSION ($GO_ARCH)"
   curl -fsSL "$URL" -o "$TMP_DIR/$TARBALL"
 
