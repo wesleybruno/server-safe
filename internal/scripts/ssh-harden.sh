@@ -11,7 +11,14 @@ fi
 
 MAIN_CONFIG="/etc/ssh/sshd_config"
 DROPIN_DIR="/etc/ssh/sshd_config.d"
-DROPIN_FILE="$DROPIN_DIR/99-server-safe.conf"
+# 00- (nao 99-): dentro de sshd_config.d, a *primeira* ocorrencia de uma
+# diretiva vence, nao a ultima (ao contrario da maioria dos formatos de
+# config, e do jail.d do fail2ban). Um 99- so ganharia se nenhum outro
+# arquivo do diretorio setasse a mesma diretiva antes — imagens Ubuntu com
+# cloud-init costumam trazer um 50-cloud-init.conf com PasswordAuthentication
+# explicito, que silenciosamente vencia o nosso.
+DROPIN_FILE="$DROPIN_DIR/00-server-safe.conf"
+rm -f "$DROPIN_DIR/99-server-safe.conf" # limpa nome antigo de versoes anteriores
 
 if ! grep -qE '^\s*Include\s+/etc/ssh/sshd_config\.d/\*\.conf' "$MAIN_CONFIG" 2>/dev/null; then
   echo "==> sshd_config nao inclui drop-ins automaticamente, adicionando Include"

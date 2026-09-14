@@ -23,10 +23,8 @@ generate_local_password() {
   printf '%s' "$pass"
 }
 
-PASSWORD=""
-
 if id "$SS_USERNAME" &>/dev/null; then
-  echo "==> usuario ja existe, pulando useradd (senha local nao e alterada)"
+  echo "==> usuario ja existe, pulando useradd"
 else
   echo "==> criando usuario $SS_USERNAME"
   if getent group sudo &>/dev/null; then
@@ -37,13 +35,21 @@ else
     fail "nenhum grupo sudo/wheel encontrado"
   fi
   useradd -m -s /bin/bash -G "$SUDO_GROUP" "$SS_USERNAME"
+fi
 
-  # Senha local so pra sudo/su — SSH continua so por chave, isso nao mexe
-  # em PasswordAuthentication. Sem essa senha, sudo nunca autentica numa
-  # conta sem senha nenhuma (nao tem o que digitar que funcione).
+# Senha local so pra sudo/su — SSH continua so por chave, isso nao mexe em
+# PasswordAuthentication. Gera sempre que a conta ainda nao tem uma senha
+# usavel (usuario novo, OU usuario que ja existia mas nunca teve senha —
+# ex: criado numa versao anterior desta ferramenta, antes dessa feature
+# existir). Nao mexe se ja tiver senha de verdade (status "P").
+PASSWORD=""
+PW_STATUS=$(passwd -S "$SS_USERNAME" 2>/dev/null | awk '{print $2}')
+if [[ "$PW_STATUS" != "P" ]]; then
   PASSWORD=$(generate_local_password)
   echo "$SS_USERNAME:$PASSWORD" | chpasswd
   echo "==> senha local gerada para sudo/su (veja o campo na UI — nao e reexibida depois)"
+else
+  echo "==> usuario ja tem senha local definida, nao mexendo"
 fi
 
 HOME_DIR=$(getent passwd "$SS_USERNAME" | cut -d: -f6)
