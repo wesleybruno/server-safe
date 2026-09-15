@@ -399,6 +399,11 @@
       <input id="cl-paths" type="text" placeholder="/root/server-safe">
     </label>
     <label><input type="checkbox" id="cl-self-destruct" checked> parar e remover o servico server-safe (self-destruct)</label>
+
+    <label><input type="checkbox" id="cl-stop-containers"> parar todos os containers Docker em execucao</label>
+    <label><input type="checkbox" id="cl-remove-images"> remover todos os containers e imagens Docker</label>
+    <p class="warn">Essas duas opcoes rodam na hora (nao esperam o delay) e afetam <strong>todos</strong> os containers da maquina, nao so os instalados por aqui. "Remover imagens" para e remove os containers tambem — nao da pra apagar imagem em uso, nem parada. Dados em volumes nomeados (histórico do Zabbix, dashboards do Grafana, etc.) não são apagados, só containers e imagens.</p>
+
     <button id="btn-cleanup">agendar limpeza final</button>
     <pre class="log" id="cl-log"></pre>
   </section>

@@ -10,9 +10,11 @@ import (
 )
 
 type CleanupRequest struct {
-	Delay        string   `json:"delay,omitempty"`         // ex: "5min", default "5min"
-	Paths        []string `json:"paths,omitempty"`         // absolute paths to remove (e.g. leftover installer)
-	SelfDestruct *bool    `json:"self_destruct,omitempty"` // default true
+	Delay          string   `json:"delay,omitempty"`         // ex: "5min", default "5min"
+	Paths          []string `json:"paths,omitempty"`         // absolute paths to remove (e.g. leftover installer)
+	SelfDestruct   *bool    `json:"self_destruct,omitempty"` // default true
+	StopContainers bool     `json:"stop_containers,omitempty"`
+	RemoveImages   bool     `json:"remove_images,omitempty"` // implies stopping+removing all containers too (Docker won't drop an image a container still references)
 }
 
 // ScheduleCleanup schedules, a short delay after this call returns (so the
@@ -33,6 +35,8 @@ func ScheduleCleanup(ctx context.Context, req CleanupRequest, onLine func(string
 		"SS_DELAY=" + delay,
 		"SS_PATHS=" + strings.Join(req.Paths, ","),
 		fmt.Sprintf("SS_SELF_DESTRUCT=%t", selfDestruct),
+		fmt.Sprintf("SS_STOP_CONTAINERS=%t", req.StopContainers),
+		fmt.Sprintf("SS_REMOVE_IMAGES=%t", req.RemoveImages),
 	}
 	return runner.Run(ctx, scripts.Combine(scripts.CleanupSchedule), nil, env, onLine)
 }

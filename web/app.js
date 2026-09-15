@@ -536,11 +536,26 @@ $("#btn-audit").addEventListener("click", async () => {
 });
 
 $("#btn-cleanup").addEventListener("click", async () => {
+  const stopContainers = $("#cl-stop-containers").checked;
+  const removeImages = $("#cl-remove-images").checked;
+
+  // Confirmacao extra pra essas duas — afetam TODO container/imagem da
+  // maquina, nao so o que o wizard instalou, e "remover imagens" nao tem
+  // volta.
+  if (removeImages) {
+    if (!confirm("Isso para e remove TODOS os containers e imagens Docker da maquina (nao so os instalados por aqui). Continuar?")) return;
+  } else if (stopContainers) {
+    if (!confirm("Isso para TODOS os containers Docker em execucao na maquina (nao so os instalados por aqui). Continuar?")) return;
+  }
+
   const pathsRaw = $("#cl-paths").value.trim();
+  const selfDestruct = $("#cl-self-destruct").checked;
   const body = {
     delay: $("#cl-delay").value,
     paths: pathsRaw ? pathsRaw.split(",").map((p) => p.trim()).filter(Boolean) : [],
-    self_destruct: $("#cl-self-destruct").checked,
+    self_destruct: selfDestruct,
+    stop_containers: stopContainers,
+    remove_images: removeImages,
   };
   const log = $("#cl-log");
   log.textContent = "";
@@ -552,7 +567,12 @@ $("#btn-cleanup").addEventListener("click", async () => {
     (line) => appendLog(log, line),
     (result) => {
       appendLog(log, "== resultado: " + result.status + " - " + result.detail);
-      appendLog(log, "wizard concluido — este painel vai se desligar sozinho em breve.");
+      if (selfDestruct) {
+        appendLog(log, "wizard concluido — este painel vai se desligar sozinho em breve.");
+      } else {
+        appendLog(log, "concluido — self-destruct nao estava marcado, o painel continua no ar.");
+        $("#btn-cleanup").disabled = false;
+      }
     },
     (err) => {
       appendLog(log, "ERRO: " + err);

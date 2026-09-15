@@ -35,7 +35,7 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 | 6 | Timers de app | Cria par `.service`/`.timer` do systemd genérico, para restart periódico de qualquer serviço |
 | 7 | Libs extras | Instala libs adicionais, uma por botão, organizadas por categoria — Containers (Docker, Portainer, Traefik), Painéis de hospedagem (Coolify, EasyPanel, cPanel/WHM), Logs (Dozzle, Loki), Monitoramento (cAdvisor, Prometheus, Grafana, Uptime Kuma, Zabbix), Backup (Restic — campos próprios de repo/paths/agenda) |
 | 8 | Auditoria final | Checa portas expostas pra fora (loopback fica de fora da lista), sudoers com NOPASSWD, contas com UID 0 extra, permissões de `.ssh`, roda `lynis` se disponível |
-| 9 | Limpeza | Agenda o self-destruct do painel + remoção de arquivos temporários |
+| 9 | Limpeza | Agenda o self-destruct do painel + remoção de arquivos temporários. Duas opções extras (desmarcadas por padrão, com confirmação): parar todos os containers Docker, ou parar+remover todos os containers e imagens — rodam na hora, afetam a máquina inteira, não só o que o wizard instalou |
 
 ## Acesso via túnel SSH
 
