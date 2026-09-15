@@ -211,12 +211,6 @@ func (h *Handlers) InstallDozzle(w http.ResponseWriter, r *http.Request) {
 	}, h.markOKWithDocker("extras_dozzle"))
 }
 
-func (h *Handlers) InstallNetdata(w http.ResponseWriter, r *http.Request) {
-	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
-		return modules.InstallNetdata(ctx, onLine)
-	}, h.markOKWithDocker("extras_netdata"))
-}
-
 func (h *Handlers) SetupRestic(w http.ResponseWriter, r *http.Request) {
 	var req modules.ResticRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -230,6 +224,42 @@ func (h *Handlers) SetupRestic(w http.ResponseWriter, r *http.Request) {
 	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
 		return modules.SetupRestic(ctx, req, onLine)
 	}, h.markOK("extras_restic"))
+}
+
+func (h *Handlers) InstallUptimeKuma(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallUptimeKuma(ctx, onLine)
+	}, h.markOKWithDocker("extras_uptimekuma"))
+}
+
+func (h *Handlers) InstallCadvisor(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallCadvisor(ctx, onLine)
+	}, h.markOKWithDocker("extras_cadvisor"))
+}
+
+func (h *Handlers) InstallPrometheus(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallPrometheus(ctx, onLine)
+	}, h.markOKWithDocker("extras_prometheus"))
+}
+
+func (h *Handlers) InstallGrafana(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallGrafana(ctx, onLine)
+	}, h.markOKWithDocker("extras_grafana"))
+}
+
+func (h *Handlers) InstallLoki(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallLoki(ctx, onLine)
+	}, h.markOKWithDocker("extras_loki"))
+}
+
+func (h *Handlers) InstallZabbix(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallZabbix(ctx, onLine)
+	}, h.markOKWithDocker("extras_zabbix"))
 }
 
 func (h *Handlers) SecurityAudit(w http.ResponseWriter, r *http.Request) {

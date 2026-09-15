@@ -93,7 +93,12 @@ const EXTRAS = {
   easypanel: "/api/extras/easypanel",
   cpanel: "/api/extras/cpanel",
   dozzle: "/api/extras/dozzle",
-  netdata: "/api/extras/netdata",
+  uptimekuma: "/api/extras/uptimekuma",
+  cadvisor: "/api/extras/cadvisor",
+  prometheus: "/api/extras/prometheus",
+  grafana: "/api/extras/grafana",
+  loki: "/api/extras/loki",
+  zabbix: "/api/extras/zabbix",
 };
 
 const EXTRA_KEYS = [...Object.keys(EXTRAS), "restic"];
@@ -111,13 +116,21 @@ const STEP_LABELS = {
 
 // Os extras (Docker/Portainer/...) nao aparecem no checklist do dashboard —
 // sao muitos e opcionais, o status de cada um fica so no proprio card na
-// aba "Libs extras" (setExtraStatuses): um check ao lado do nome quando
-// instalado, nada quando nao — sem badge/texto "nao instalado" poluindo.
+// aba "Libs extras": um check ao lado do nome quando instalado, e o botao
+// "instalar" some (nada a fazer ali) — nao fica os dois ao mesmo tempo.
+function setExtraInstalled(key, installed) {
+  const check = $("#ex-" + key + "-check");
+  if (check) check.hidden = !installed;
+  // Restic fica de fora do auto-hide do botao: e configuracao (repo/paths/
+  // agenda), nao um instalador de uma vez so — precisa continuar clicavel
+  // pra reconfigurar depois, mesmo com o check ja marcado.
+  if (key === "restic") return;
+  const btn = $("#btn-install-" + key);
+  if (btn) btn.hidden = installed;
+}
+
 function setExtraStatuses(done) {
-  EXTRA_KEYS.forEach((key) => {
-    const check = $("#ex-" + key + "-check");
-    if (check) check.hidden = !done["extras_" + key];
-  });
+  EXTRA_KEYS.forEach((key) => setExtraInstalled(key, !!done["extras_" + key]));
 }
 
 function setGauge(prefix, pct) {
@@ -376,15 +389,15 @@ function wireExtraInstall(key, url) {
         appendLog(log, "== resultado: " + result.status + " - " + result.detail);
         btn.disabled = false;
         // atualizacao otimista — o proximo poll do dashboard (ate 3s) confirma.
-        // Portainer/Traefik/Coolify/EasyPanel instalam o Docker junto se
-        // precisar, entao o check do Docker acompanha o deles tambem.
+        // A maioria dos extras instala o Docker junto se precisar (dependsOnDocker
+        // abaixo), entao o card do Docker acompanha o deles tambem.
         if (result.status === "ok") {
-          const dependsOnDocker = ["portainer", "traefik", "coolify", "easypanel", "dozzle", "netdata"];
+          const dependsOnDocker = [
+            "portainer", "traefik", "coolify", "easypanel", "dozzle",
+            "uptimekuma", "cadvisor", "prometheus", "grafana", "loki", "zabbix",
+          ];
           const keys = dependsOnDocker.includes(key) ? [key, "docker"] : [key];
-          keys.forEach((k) => {
-            const check = $("#ex-" + k + "-check");
-            if (check) check.hidden = false;
-          });
+          keys.forEach((k) => setExtraInstalled(k, true));
         }
       },
       (err) => {
@@ -430,8 +443,7 @@ $("#btn-install-restic").addEventListener("click", async () => {
       appendLog(log, "== resultado: " + result.status + " - " + result.detail);
       btn.disabled = false;
       if (result.status === "ok") {
-        const check = $("#ex-restic-check");
-        if (check) check.hidden = false;
+        setExtraInstalled("restic", true);
         const password = result.data && result.data.password;
         if (password) {
           $("#rs-password-box").classList.remove("hidden");

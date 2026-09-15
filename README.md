@@ -33,20 +33,25 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 | 4 | Fail2ban | Jail do sshd configurável (bantime / findtime / maxretry) |
 | 5 | Atualizações automáticas | `unattended-upgrades` (Debian/Ubuntu) ou `dnf-automatic` (RHEL/Fedora) |
 | 6 | Timers de app | Cria par `.service`/`.timer` do systemd genérico, para restart periódico de qualquer serviço |
-| 7 | Libs extras | Instala libs adicionais, uma por botão: Docker, Portainer, Traefik, Coolify, EasyPanel, cPanel/WHM, Netdata, Dozzle; Restic tem campos próprios (repo/paths/agenda) pra backup automático |
+| 7 | Libs extras | Instala libs adicionais, uma por botão, organizadas por categoria — Containers (Docker, Portainer, Traefik), Painéis de hospedagem (Coolify, EasyPanel, cPanel/WHM), Logs (Dozzle, Loki), Monitoramento (cAdvisor, Prometheus, Grafana, Uptime Kuma, Zabbix), Backup (Restic — campos próprios de repo/paths/agenda) |
 | 8 | Auditoria final | Checa portas expostas pra fora (loopback fica de fora da lista), sudoers com NOPASSWD, contas com UID 0 extra, permissões de `.ssh`, roda `lynis` se disponível |
 | 9 | Limpeza | Agenda o self-destruct do painel + remoção de arquivos temporários |
 
 ## Acesso via túnel SSH
 
-Painel server-safe e as UIs de admin dos extras (Portainer, Traefik, Netdata, Dozzle) só escutam em `127.0.0.1` na máquina — de propósito, nunca expostos direto na internet. Acesso sempre via túnel SSH, um `-L` por porta que você for usar:
+Painel server-safe e as UIs de admin dos extras só escutam em `127.0.0.1` na máquina — de propósito, nunca expostos direto na internet. Acesso sempre via túnel SSH, um `-L` por porta que você for usar:
 
 ```bash
 ssh -L 8080:127.0.0.1:8080 \
     -L 9443:127.0.0.1:9443 \
     -L 8090:127.0.0.1:8090 \
-    -L 19999:127.0.0.1:19999 \
     -L 8081:127.0.0.1:8081 \
+    -L 8082:127.0.0.1:8082 \
+    -L 8083:127.0.0.1:8083 \
+    -L 9090:127.0.0.1:9090 \
+    -L 3000:127.0.0.1:3000 \
+    -L 3100:127.0.0.1:3100 \
+    -L 8084:127.0.0.1:8084 \
     usuario@servidor
 ```
 
@@ -55,10 +60,17 @@ ssh -L 8080:127.0.0.1:8080 \
 | `8080` | painel server-safe → `http://127.0.0.1:8080` |
 | `9443` | Portainer (se instalado) → `https://127.0.0.1:9443` |
 | `8090` | dashboard Traefik (se instalado) → `http://127.0.0.1:8090` — não é 8080 de propósito, já é o painel |
-| `19999` | Netdata (se instalado) → `http://127.0.0.1:19999` |
 | `8081` | Dozzle (se instalado) → `http://127.0.0.1:8081` |
+| `8082` | Uptime Kuma (se instalado) → `http://127.0.0.1:8082` |
+| `8083` | cAdvisor (se instalado) → `http://127.0.0.1:8083` |
+| `9090` | Prometheus (se instalado) → `http://127.0.0.1:9090` |
+| `3000` | Grafana (se instalado) → `http://127.0.0.1:3000` — login inicial `admin/admin` |
+| `3100` | Loki (se instalado) → `http://127.0.0.1:3100` — sem UI própria, é datasource do Grafana |
+| `8084` | Zabbix (se instalado) → `http://127.0.0.1:8084` — login inicial `Admin/zabbix` |
 
 Só inclua os `-L` dos serviços que você de fato instalou. Deixe o terminal do SSH aberto enquanto usa. Restic não entra nessa lista — não tem UI web, é só backup agendado (`systemctl list-timers`/`journalctl -u server-safe-restic-backup` pra acompanhar).
+
+cAdvisor, Prometheus, Grafana e Loki (se instalados) ficam todos na mesma rede docker `server-safe-monitoring` — dá pra configurar um datasource do Grafana apontando pra `http://prometheus:9090` ou `http://loki:3100` direto pelo nome do container, sem descobrir IP. Isso não é feito automaticamente (cada extra é independente), é um passo manual dentro da UI de cada ferramenta.
 
 ## Segurança da chave SSH gerada
 

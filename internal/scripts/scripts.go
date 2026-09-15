@@ -53,11 +53,26 @@ var CPanelInstall []byte
 //go:embed dozzle-install.sh
 var DozzleInstall []byte
 
-//go:embed netdata-install.sh
-var NetdataInstall []byte
-
 //go:embed restic-setup.sh
 var ResticSetup []byte
+
+//go:embed uptime-kuma-install.sh
+var UptimeKumaInstall []byte
+
+//go:embed cadvisor-install.sh
+var CadvisorInstall []byte
+
+//go:embed prometheus-install.sh
+var PrometheusInstall []byte
+
+//go:embed grafana-install.sh
+var GrafanaInstall []byte
+
+//go:embed loki-install.sh
+var LokiInstall []byte
+
+//go:embed zabbix-install.sh
+var ZabbixInstall []byte
 
 //go:embed dashboard-stats.sh
 var DashboardStats []byte
