@@ -3,12 +3,10 @@
 # Docker sozinho se faltar, nao depende do step Docker deste wizard.
 ensure_installed curl curl
 
-if [[ -d /data/coolify ]]; then
-  echo "==> coolify ja instalado (/data/coolify existe)"
-else
-  echo "==> rodando instalador oficial do coolify (instala docker sozinho se faltar)"
-  curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
-fi
+[[ -d /data/coolify ]] && fail "coolify ja esta instalado"
+
+echo "==> rodando instalador oficial do coolify (instala docker sozinho se faltar)"
+curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
 
 echo "==> validando"
 sleep 3

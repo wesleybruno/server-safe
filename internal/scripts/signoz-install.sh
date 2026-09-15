@@ -1,6 +1,6 @@
-# Idempotente: reusa o deployment se ja existir (checa o container do
-# frontend). Requer Docker com o plugin compose v2 — instala junto
-# (ensure_docker, common.sh) se ainda nao tiver.
+# Aborta se ja estiver instalado (nao reinstala/reconfigura em cima) — checa
+# o container do frontend. Requer Docker com o plugin compose v2 — instala
+# junto (ensure_docker, common.sh) se ainda nao tiver.
 #
 # O extra mais pesado do grupo: ClickHouse + Postgres + collector + migrator
 # + keeper + frontend, 6 containers no total — recomenda pelo menos 4GB de
@@ -17,19 +17,15 @@ command -v docker &>/dev/null || ensure_docker
 SIGNOZ_DIR=/etc/server-safe/signoz
 mkdir -p "$SIGNOZ_DIR"
 
-if docker ps -a --format '{{.Names}}' | grep -qx signoz-signoz-0; then
-  echo "==> signoz ja existe, garantindo que os containers estao rodando"
-  for c in signoz-metastore-postgres-0 signoz-telemetrykeeper-clickhousekeeper-0 signoz-telemetrystore-clickhouse-0-0 ingester signoz-signoz-0; do
-    docker start "$c" &>/dev/null || true
-  done
-else
-  if ! command -v foundryctl &>/dev/null; then
-    echo "==> instalando foundryctl (CLI oficial do SigNoz)"
-    curl -fsSL https://signoz.io/foundry.sh | FOUNDRY_INSTALL_DIR=/usr/local/bin FOUNDRY_ASSUME_YES=true bash
-  fi
-  command -v foundryctl &>/dev/null || fail "foundryctl nao encontrado apos instalar"
+docker ps -a --format '{{.Names}}' | grep -qx signoz-signoz-0 && fail "signoz ja esta instalado"
 
-  cat > "$SIGNOZ_DIR/casting.yaml" <<'EOF'
+if ! command -v foundryctl &>/dev/null; then
+  echo "==> instalando foundryctl (CLI oficial do SigNoz)"
+  curl -fsSL https://signoz.io/foundry.sh | FOUNDRY_INSTALL_DIR=/usr/local/bin FOUNDRY_ASSUME_YES=true bash
+fi
+command -v foundryctl &>/dev/null || fail "foundryctl nao encontrado apos instalar"
+
+cat > "$SIGNOZ_DIR/casting.yaml" <<'EOF'
 apiVersion: v1alpha1
 metadata:
   name: signoz
@@ -51,9 +47,8 @@ spec:
           value: "127.0.0.1:4318:4318"
 EOF
 
-  echo "==> subindo stack signoz via foundryctl (baixa varias imagens, pode demorar)"
-  (cd "$SIGNOZ_DIR" && foundryctl cast -f casting.yaml -p pours --format text)
-fi
+echo "==> subindo stack signoz via foundryctl (baixa varias imagens, pode demorar)"
+(cd "$SIGNOZ_DIR" && foundryctl cast -f casting.yaml -p pours --format text)
 
 echo "==> validando"
 sleep 5

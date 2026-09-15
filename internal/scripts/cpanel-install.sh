@@ -6,15 +6,13 @@
 FAMILY=$(distro_family)
 [[ "$FAMILY" == "rhel" ]] || fail "cPanel/WHM so suporta AlmaLinux/CloudLinux/RHEL — esta maquina e da familia $FAMILY"
 
-if [[ -x /usr/local/cpanel/cpanel ]]; then
-  echo "==> cpanel ja instalado"
-else
-  echo "==> baixando instalador oficial da cpanel (demora 1-2h, exige licenca)"
-  ensure_installed curl curl
-  cd /home
-  curl -o latest -L https://securedownloads.cpanel.net/latest
-  sh latest
-fi
+[[ -x /usr/local/cpanel/cpanel ]] && fail "cpanel ja esta instalado"
+
+echo "==> baixando instalador oficial da cpanel (demora 1-2h, exige licenca)"
+ensure_installed curl curl
+cd /home
+curl -o latest -L https://securedownloads.cpanel.net/latest
+sh latest
 
 echo "==> validando"
 [[ -x /usr/local/cpanel/cpanel ]] || fail "instalacao do cpanel nao confirmada"

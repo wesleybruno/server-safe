@@ -3,12 +3,10 @@
 # Docker sozinho se faltar, nao depende do step Docker deste wizard.
 ensure_installed curl curl
 
-if docker service ls 2>/dev/null | grep -qi easypanel; then
-  echo "==> easypanel ja instalado (docker service ativo)"
-else
-  echo "==> rodando instalador oficial do easypanel (instala docker sozinho se faltar)"
-  curl -sSL https://get.easypanel.io | sh
-fi
+docker service ls 2>/dev/null | grep -qi easypanel && fail "easypanel ja esta instalado"
+
+echo "==> rodando instalador oficial do easypanel (instala docker sozinho se faltar)"
+curl -sSL https://get.easypanel.io | sh
 
 echo "==> validando"
 sleep 3

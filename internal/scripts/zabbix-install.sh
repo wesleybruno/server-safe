@@ -1,5 +1,6 @@
-# Idempotent: reusa cada container se ja existir, reaproveita a senha do
-# banco se ja gerada. Requer Docker — instala junto (ensure_docker,
+# Aborta se ja estiver instalado (nao reinstala/reconfigura em cima) — checa
+# so o primeiro container (zabbix-postgres), os outros dois sempre sobem
+# junto no mesmo run. Requer Docker — instala junto (ensure_docker,
 # common.sh) se ainda nao tiver.
 #
 # O extra mais pesado do grupo: 3 containers (Postgres + zabbix-server +
@@ -10,71 +11,51 @@
 # pronto.
 command -v docker &>/dev/null || ensure_docker
 
+docker ps -a --format '{{.Names}}' | grep -qx zabbix-postgres && fail "zabbix ja esta instalado"
+
 docker network create server-safe-zabbix &>/dev/null || true
 
 mkdir -p /etc/zabbix
 chmod 700 /etc/zabbix
+DB_PASSWORD=$(random_password)
+printf '%s' "$DB_PASSWORD" > /etc/zabbix/db-password
+chmod 600 /etc/zabbix/db-password
 
-if [[ -s /etc/zabbix/db-password ]]; then
-  echo "==> senha do banco ja existe, reaproveitando"
-  DB_PASSWORD=$(cat /etc/zabbix/db-password)
-else
-  DB_PASSWORD=$(random_password)
-  printf '%s' "$DB_PASSWORD" > /etc/zabbix/db-password
-  chmod 600 /etc/zabbix/db-password
-  echo "==> senha do banco gerada"
-fi
+echo "==> subindo container zabbix-postgres"
+docker run -d \
+  --name zabbix-postgres \
+  --restart=always \
+  --network server-safe-zabbix \
+  -e POSTGRES_USER=zabbix \
+  -e POSTGRES_PASSWORD="$DB_PASSWORD" \
+  -e POSTGRES_DB=zabbix \
+  -v zabbix-postgres:/var/lib/postgresql/data \
+  postgres:16-alpine
 
-if docker ps -a --format '{{.Names}}' | grep -qx zabbix-postgres; then
-  echo "==> zabbix-postgres ja existe, garantindo que esta rodando"
-  docker start zabbix-postgres &>/dev/null || true
-else
-  echo "==> subindo container zabbix-postgres"
-  docker run -d \
-    --name zabbix-postgres \
-    --restart=always \
-    --network server-safe-zabbix \
-    -e POSTGRES_USER=zabbix \
-    -e POSTGRES_PASSWORD="$DB_PASSWORD" \
-    -e POSTGRES_DB=zabbix \
-    -v zabbix-postgres:/var/lib/postgresql/data \
-    postgres:16-alpine
-fi
+echo "==> subindo container zabbix-server"
+docker run -d \
+  --name zabbix-server \
+  --restart=always \
+  --network server-safe-zabbix \
+  -e DB_SERVER_HOST=zabbix-postgres \
+  -e POSTGRES_USER=zabbix \
+  -e POSTGRES_PASSWORD="$DB_PASSWORD" \
+  -e POSTGRES_DB=zabbix \
+  -v zabbix-server:/var/lib/zabbix \
+  zabbix/zabbix-server-pgsql:latest
 
-if docker ps -a --format '{{.Names}}' | grep -qx zabbix-server; then
-  echo "==> zabbix-server ja existe, garantindo que esta rodando"
-  docker start zabbix-server &>/dev/null || true
-else
-  echo "==> subindo container zabbix-server"
-  docker run -d \
-    --name zabbix-server \
-    --restart=always \
-    --network server-safe-zabbix \
-    -e DB_SERVER_HOST=zabbix-postgres \
-    -e POSTGRES_USER=zabbix \
-    -e POSTGRES_PASSWORD="$DB_PASSWORD" \
-    -e POSTGRES_DB=zabbix \
-    -v zabbix-server:/var/lib/zabbix \
-    zabbix/zabbix-server-pgsql:latest
-fi
-
-if docker ps -a --format '{{.Names}}' | grep -qx zabbix-web; then
-  echo "==> zabbix-web ja existe, garantindo que esta rodando"
-  docker start zabbix-web &>/dev/null || true
-else
-  echo "==> subindo container zabbix-web (so em localhost)"
-  docker run -d \
-    --name zabbix-web \
-    --restart=always \
-    --network server-safe-zabbix \
-    -p 127.0.0.1:8084:8080 \
-    -e ZBX_SERVER_HOST=zabbix-server \
-    -e DB_SERVER_HOST=zabbix-postgres \
-    -e POSTGRES_USER=zabbix \
-    -e POSTGRES_PASSWORD="$DB_PASSWORD" \
-    -e POSTGRES_DB=zabbix \
-    zabbix/zabbix-web-nginx-pgsql:latest
-fi
+echo "==> subindo container zabbix-web (so em localhost)"
+docker run -d \
+  --name zabbix-web \
+  --restart=always \
+  --network server-safe-zabbix \
+  -p 127.0.0.1:8084:8080 \
+  -e ZBX_SERVER_HOST=zabbix-server \
+  -e DB_SERVER_HOST=zabbix-postgres \
+  -e POSTGRES_USER=zabbix \
+  -e POSTGRES_PASSWORD="$DB_PASSWORD" \
+  -e POSTGRES_DB=zabbix \
+  zabbix/zabbix-web-nginx-pgsql:latest
 
 echo "==> validando"
 sleep 3

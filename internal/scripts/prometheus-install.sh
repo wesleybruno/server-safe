@@ -1,12 +1,13 @@
-# Idempotent: reusa o container se ja existir, sempre reescreve o config
-# (conteudo fixo, minimo — so faz o Prometheus escutar). Requer Docker —
-# instala junto (ensure_docker, common.sh) se ainda nao tiver.
+# Aborta se ja estiver instalado (nao reinstala/reconfigura em cima). Requer
+# Docker — instala junto (ensure_docker, common.sh) se ainda nao tiver.
 #
 # Mesma rede "server-safe-monitoring" do cAdvisor/Grafana/Loki (se
 # instalados) — nenhum scrape/datasource e configurado automaticamente de
 # proposito, mas o admin pode adicionar um job pra "cadvisor:8080" no
 # config depois, ja que os containers se enxergam pelo nome nessa rede.
 command -v docker &>/dev/null || ensure_docker
+
+docker ps -a --format '{{.Names}}' | grep -qx prometheus && fail "prometheus ja esta instalado"
 
 docker network create server-safe-monitoring &>/dev/null || true
 
@@ -20,20 +21,15 @@ scrape_configs:
       - targets: ["localhost:9090"]
 EOF
 
-if docker ps -a --format '{{.Names}}' | grep -qx prometheus; then
-  echo "==> prometheus ja existe, garantindo que esta rodando"
-  docker start prometheus &>/dev/null || true
-else
-  echo "==> subindo container prometheus (metricas, so em localhost)"
-  docker run -d \
-    --name prometheus \
-    --restart=always \
-    --network server-safe-monitoring \
-    -p 127.0.0.1:9090:9090 \
-    -v /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro \
-    -v prometheus-data:/prometheus \
-    prom/prometheus:latest
-fi
+echo "==> subindo container prometheus (metricas, so em localhost)"
+docker run -d \
+  --name prometheus \
+  --restart=always \
+  --network server-safe-monitoring \
+  -p 127.0.0.1:9090:9090 \
+  -v /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro \
+  -v prometheus-data:/prometheus \
+  prom/prometheus:latest
 
 echo "==> validando"
 sleep 2

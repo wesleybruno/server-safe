@@ -117,17 +117,14 @@ const STEP_LABELS = {
 
 // Os extras (Docker/Portainer/...) nao aparecem no checklist do dashboard —
 // sao muitos e opcionais, o status de cada um fica so no proprio card na
-// aba "Libs extras": um check ao lado do nome quando instalado, e o botao
-// "instalar" some (nada a fazer ali) — nao fica os dois ao mesmo tempo.
+// aba "Libs extras": um check ao lado do nome quando instalado. O botao
+// "instalar" fica sempre visivel (mesmo ja instalado) — clicar de novo so
+// tenta reinstalar, e o proprio script aborta com erro claro se a lib ja
+// estiver la (fail() no bash, ver CLAUDE.md); nao escondemos o botao no
+// client pra nao mascarar esse aviso.
 function setExtraInstalled(key, installed) {
   const check = $("#ex-" + key + "-check");
   if (check) check.hidden = !installed;
-  // Restic fica de fora do auto-hide do botao: e configuracao (repo/paths/
-  // agenda), nao um instalador de uma vez so — precisa continuar clicavel
-  // pra reconfigurar depois, mesmo com o check ja marcado.
-  if (key === "restic") return;
-  const btn = $("#btn-install-" + key);
-  if (btn) btn.hidden = installed;
 }
 
 function setExtraStatuses(done) {
