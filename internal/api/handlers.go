@@ -268,6 +268,18 @@ func (h *Handlers) InstallSignoz(w http.ResponseWriter, r *http.Request) {
 	}, h.markOKWithDocker("extras_signoz"))
 }
 
+func (h *Handlers) InstallNetdata(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallNetdata(ctx, onLine)
+	}, h.markOKWithDocker("extras_netdata"))
+}
+
+func (h *Handlers) InstallNodeExporter(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallNodeExporter(ctx, onLine)
+	}, h.markOKWithDocker("extras_nodeexporter"))
+}
+
 func (h *Handlers) SecurityAudit(w http.ResponseWriter, r *http.Request) {
 	var req modules.SecurityAuditRequest
 	_ = json.NewDecoder(r.Body).Decode(&req)

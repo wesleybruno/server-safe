@@ -77,6 +77,12 @@ var ZabbixInstall []byte
 //go:embed signoz-install.sh
 var SignozInstall []byte
 
+//go:embed netdata-install.sh
+var NetdataInstall []byte
+
+//go:embed node-exporter-install.sh
+var NodeExporterInstall []byte
+
 //go:embed dashboard-stats.sh
 var DashboardStats []byte
 

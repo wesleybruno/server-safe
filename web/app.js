@@ -95,6 +95,8 @@ const EXTRAS = {
   dozzle: "/api/extras/dozzle",
   uptimekuma: "/api/extras/uptimekuma",
   cadvisor: "/api/extras/cadvisor",
+  nodeexporter: "/api/extras/nodeexporter",
+  netdata: "/api/extras/netdata",
   prometheus: "/api/extras/prometheus",
   grafana: "/api/extras/grafana",
   loki: "/api/extras/loki",
@@ -392,7 +394,7 @@ function wireExtraInstall(key, url) {
         if (result.status === "ok") {
           const dependsOnDocker = [
             "portainer", "traefik", "coolify", "easypanel", "dozzle",
-            "uptimekuma", "cadvisor", "prometheus", "grafana", "loki", "zabbix", "signoz",
+            "uptimekuma", "cadvisor", "nodeexporter", "netdata", "prometheus", "grafana", "loki", "zabbix", "signoz",
           ];
           const keys = dependsOnDocker.includes(key) ? [key, "docker"] : [key];
           keys.forEach((k) => setExtraInstalled(k, true));

@@ -25,6 +25,8 @@ var Steps = []string{
 	"extras_restic",
 	"extras_uptimekuma",
 	"extras_cadvisor",
+	"extras_nodeexporter",
+	"extras_netdata",
 	"extras_prometheus",
 	"extras_grafana",
 	"extras_loki",
