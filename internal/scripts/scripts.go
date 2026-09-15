@@ -74,6 +74,9 @@ var LokiInstall []byte
 //go:embed zabbix-install.sh
 var ZabbixInstall []byte
 
+//go:embed signoz-install.sh
+var SignozInstall []byte
+
 //go:embed dashboard-stats.sh
 var DashboardStats []byte
 

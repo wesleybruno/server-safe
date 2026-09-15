@@ -325,6 +325,19 @@
         <button id="btn-install-zabbix">instalar</button>
         <pre class="log" id="ex-zabbix-log"></pre>
       </div>
+
+      <div class="extra-card">
+        <div class="extra-card-head">
+          <div class="extra-icon extra-icon-mono" style="--brand:#4E74F8">SN</div>
+          <div class="extra-info">
+            <h3>SigNoz <svg class="check-icon" id="ex-signoz-check" viewBox="0 0 24 24" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></h3>
+            <p>Observabilidade completa (metricas, traces, logs via OpenTelemetry). Painel em <code>127.0.0.1:8085</code>, ingestao OTLP em <code>4317</code>/<code>4318</code>, tudo via tunel SSH.</p>
+            <p class="warn">O extra mais pesado do grupo: ClickHouse + Postgres + collector + frontend, 6 containers — recomenda 4GB de RAM livres. Instala o Docker junto se precisar.</p>
+          </div>
+        </div>
+        <button id="btn-install-signoz">instalar</button>
+        <pre class="log" id="ex-signoz-log"></pre>
+      </div>
     </div>
 
     <h3 class="extra-category">Backup</h3>

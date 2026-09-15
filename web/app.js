@@ -99,6 +99,7 @@ const EXTRAS = {
   grafana: "/api/extras/grafana",
   loki: "/api/extras/loki",
   zabbix: "/api/extras/zabbix",
+  signoz: "/api/extras/signoz",
 };
 
 const EXTRA_KEYS = [...Object.keys(EXTRAS), "restic"];
@@ -394,7 +395,7 @@ function wireExtraInstall(key, url) {
         if (result.status === "ok") {
           const dependsOnDocker = [
             "portainer", "traefik", "coolify", "easypanel", "dozzle",
-            "uptimekuma", "cadvisor", "prometheus", "grafana", "loki", "zabbix",
+            "uptimekuma", "cadvisor", "prometheus", "grafana", "loki", "zabbix", "signoz",
           ];
           const keys = dependsOnDocker.includes(key) ? [key, "docker"] : [key];
           keys.forEach((k) => setExtraInstalled(k, true));

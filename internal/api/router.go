@@ -32,6 +32,7 @@ func RegisterRoutes(mux *http.ServeMux, ks *keystore.Store, pt *progress.Tracker
 	mux.HandleFunc("POST /api/extras/grafana", h.InstallGrafana)
 	mux.HandleFunc("POST /api/extras/loki", h.InstallLoki)
 	mux.HandleFunc("POST /api/extras/zabbix", h.InstallZabbix)
+	mux.HandleFunc("POST /api/extras/signoz", h.InstallSignoz)
 	mux.HandleFunc("POST /api/audit/run", h.SecurityAudit)
 	mux.HandleFunc("POST /api/cleanup/schedule", h.ScheduleCleanup)
 	mux.HandleFunc("GET /api/dashboard", h.Dashboard)

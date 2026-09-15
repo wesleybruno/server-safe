@@ -29,6 +29,7 @@ var Steps = []string{
 	"extras_grafana",
 	"extras_loki",
 	"extras_zabbix",
+	"extras_signoz",
 	"audit",
 	"cleanup",
 }

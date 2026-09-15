@@ -33,7 +33,7 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 | 4 | Fail2ban | Jail do sshd configurável (bantime / findtime / maxretry) |
 | 5 | Atualizações automáticas | `unattended-upgrades` (Debian/Ubuntu) ou `dnf-automatic` (RHEL/Fedora) |
 | 6 | Timers de app | Cria par `.service`/`.timer` do systemd genérico, para restart periódico de qualquer serviço |
-| 7 | Libs extras | Instala libs adicionais, uma por botão, organizadas por categoria — Containers (Docker, Portainer, Traefik), Painéis de hospedagem (Coolify, EasyPanel, cPanel/WHM), Logs (Dozzle, Loki), Monitoramento (cAdvisor, Prometheus, Grafana, Uptime Kuma, Zabbix), Backup (Restic — campos próprios de repo/paths/agenda) |
+| 7 | Libs extras | Instala libs adicionais, uma por botão, organizadas por categoria — Containers (Docker, Portainer, Traefik), Painéis de hospedagem (Coolify, EasyPanel, cPanel/WHM), Logs (Dozzle, Loki), Monitoramento (cAdvisor, Prometheus, Grafana, Uptime Kuma, Zabbix, SigNoz), Backup (Restic — campos próprios de repo/paths/agenda) |
 | 8 | Auditoria final | Checa portas expostas pra fora (loopback fica de fora da lista), sudoers com NOPASSWD, contas com UID 0 extra, permissões de `.ssh`, roda `lynis` se disponível |
 | 9 | Limpeza | Agenda o self-destruct do painel + remoção de arquivos temporários. Duas opções extras (desmarcadas por padrão, com confirmação): parar todos os containers Docker, ou parar+remover todos os containers e imagens — rodam na hora, afetam a máquina inteira, não só o que o wizard instalou |
 
@@ -52,6 +52,9 @@ ssh -L 8080:127.0.0.1:8080 \
     -L 3000:127.0.0.1:3000 \
     -L 3100:127.0.0.1:3100 \
     -L 8084:127.0.0.1:8084 \
+    -L 8085:127.0.0.1:8085 \
+    -L 4317:127.0.0.1:4317 \
+    -L 4318:127.0.0.1:4318 \
     usuario@servidor
 ```
 
@@ -67,6 +70,8 @@ ssh -L 8080:127.0.0.1:8080 \
 | `3000` | Grafana (se instalado) → `http://127.0.0.1:3000` — login inicial `admin/admin` |
 | `3100` | Loki (se instalado) → `http://127.0.0.1:3100` — sem UI própria, é datasource do Grafana |
 | `8084` | Zabbix (se instalado) → `http://127.0.0.1:8084` — login inicial `Admin/zabbix` |
+| `8085` | SigNoz (se instalado) → `http://127.0.0.1:8085` |
+| `4317`/`4318` | SigNoz — ingestão OTLP (grpc/http), pra apontar apps instrumentados com OpenTelemetry |
 
 Só inclua os `-L` dos serviços que você de fato instalou. Deixe o terminal do SSH aberto enquanto usa. Restic não entra nessa lista — não tem UI web, é só backup agendado (`systemctl list-timers`/`journalctl -u server-safe-restic-backup` pra acompanhar).
 

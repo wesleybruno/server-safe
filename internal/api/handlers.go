@@ -262,6 +262,12 @@ func (h *Handlers) InstallZabbix(w http.ResponseWriter, r *http.Request) {
 	}, h.markOKWithDocker("extras_zabbix"))
 }
 
+func (h *Handlers) InstallSignoz(w http.ResponseWriter, r *http.Request) {
+	runStreamed(w, r, func(ctx context.Context, onLine func(string)) (*runner.Result, error) {
+		return modules.InstallSignoz(ctx, onLine)
+	}, h.markOKWithDocker("extras_signoz"))
+}
+
 func (h *Handlers) SecurityAudit(w http.ResponseWriter, r *http.Request) {
 	var req modules.SecurityAuditRequest
 	_ = json.NewDecoder(r.Body).Decode(&req)
