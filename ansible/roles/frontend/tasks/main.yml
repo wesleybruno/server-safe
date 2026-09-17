@@ -1,0 +1,28 @@
+---
+- name: Verificar se service frontend ja existe
+  command: docker service inspect frontend
+  register: frontend_inspect
+  changed_when: false
+  failed_when: false
+
+- name: "Subir service frontend (so rede publica — sem acesso ao banco/api_data_network)"
+  command: >
+    docker service create
+    --name frontend
+    --replicas {{ frontend_replicas }}
+    --network {{ frontend_network }}
+    --label traefik.enable=true
+    --label "traefik.http.routers.frontend.rule=Host(`{{ frontend_host }}`)"
+    --label traefik.http.routers.frontend.entrypoints=websecure
+    --label traefik.http.routers.frontend.tls.certresolver=letsencrypt
+    --label traefik.http.services.frontend.loadbalancer.server.port={{ frontend_container_port }}
+    {{ frontend_image }}
+  when: frontend_inspect.rc != 0
+
+- name: Validar service frontend com replicas ativas
+  command: "docker service ls --filter name=frontend --format '{{ '{{.Replicas}}' }}'"
+  register: frontend_replica_status
+  changed_when: false
+  until: "'{{ frontend_replicas }}/{{ frontend_replicas }}' in frontend_replica_status.stdout"
+  retries: 10
+  delay: 3

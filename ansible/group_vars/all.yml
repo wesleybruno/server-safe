@@ -1,0 +1,14 @@
+---
+# Rede overlay compartilhada entre traefik e portainer — unica pra criar,
+# centralizada aqui em vez de duplicada em cada role/defaults.
+server_safe_proxy_network: server-safe-proxy
+
+# Rede overlay privada entre api e database (app.yml) — NAO entra o
+# traefik nem o frontend aqui, so quem precisa falar com o banco. Banco
+# nunca fica alcancavel de fora, nem pelo proprio traefik.
+app_data_network: app-data
+
+# Identidade do banco — contrato compartilhado entre os roles database e
+# api (nao e "default do role database", e conhecimento dos dois).
+app_database_name: app
+app_database_user: app

@@ -97,6 +97,10 @@ O extra Restic (etapa 7) instala o `restic`, inicializa o repositório informado
 
 A senha do repositório é gerada uma vez (mesma lógica da senha do usuário: 20 caracteres, mostrada uma única vez na UI com botão de copiar) e fica em `/etc/restic/password` (`600`, só root). **Sem essa senha os backups ficam ilegíveis pra sempre** — anote assim que aparecer na tela, não tem como recuperar depois.
 
+## Configuração pós-wizard (Ansible)
+
+Depois do hardening inicial, `ansible/` (playbooks rodados da sua máquina, não do binário Go) configura Docker Swarm + Traefik + Portainer na VPS, reaproveitando o usuário/chave que o wizard criou. Detalhes, pré-requisitos e um template opcional de stack de app (Database/API/Frontend) em [ansible/README.md](ansible/README.md).
+
 ## Proteções anti-lockout
 
 - SSH: valida a config (`sshd -t`) antes de reiniciar o serviço, e confere o estado efetivo depois.

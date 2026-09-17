@@ -1,40 +1,117 @@
 ---
-- name: Verificar se container traefik ja existe
-  command: docker inspect traefik
+- name: Verificar se rede {{ traefik_network }} existe
+  command: "docker network inspect {{ traefik_network }}"
+  register: network_inspect
+  changed_when: false
+  failed_when: false
+
+# --attachable: alem dos services do swarm, containers "soltos" (docker run)
+# tambem podem entrar nessa rede se algum dia precisar.
+- name: Criar rede overlay {{ traefik_network }}
+  command: "docker network create --driver overlay --attachable {{ traefik_network }}"
+  when: network_inspect.rc != 0
+
+- name: Verificar se volume traefik_letsencrypt existe
+  command: docker volume inspect traefik_letsencrypt
+  register: letsencrypt_volume
+  changed_when: false
+  failed_when: false
+
+# acme.json (certificados emitidos) precisa sobreviver a recriacao do
+# service — volume, nao bind mount (single-node hoje, mas nao amarra em
+# path do host).
+- name: Criar volume traefik_letsencrypt
+  command: docker volume create traefik_letsencrypt
+  when: letsencrypt_volume.rc != 0
+
+- name: Verificar se service traefik ja existe
+  command: docker service inspect traefik
   register: traefik_inspect
   changed_when: false
   failed_when: false
 
-- name: Criar rede {{ traefik_network }}
-  command: "docker network create {{ traefik_network }}"
-  register: network_create
-  changed_when: network_create.rc == 0
-  failed_when: network_create.rc != 0 and 'already exists' not in network_create.stderr
+# Senha de uma via so — gerada na criacao, nunca regenerada depois (mesmo
+# idioma do user-create.sh/restic-setup.sh: mostrada uma vez, nao
+# reexibida). /dev/null como "arquivo" do lookup password e o jeito de
+# pedir um valor aleatorio sem persistir em disco no control node.
+- name: Gerar senha do dashboard
+  no_log: true
+  set_fact:
+    traefik_dashboard_password: "{{ lookup('password', '/dev/null length=20 chars=ascii_letters,digits') }}"
   when: traefik_inspect.rc != 0
 
-- name: "Subir container traefik (80/443 publicas, dashboard so em loopback:{{ traefik_dashboard_port }})"
-  # --api.insecure=true (dashboard sem auth propria) so e aceitavel porque a
-  # porta esta amarrada em 127.0.0.1 — mesma postura do proprio painel
-  # server-safe, acesso via tunel SSH, nunca exposto direto.
+# apr1 (MD5 crypt) e o formato que o middleware basicauth do traefik entende.
+# Sem shell nenhum entre o valor e o comando (modulo `command`, nao
+# `shell`) — os `$` do hash chegam literais no argv, sem escaping especial.
+- name: Gerar hash apr1 da senha (basic auth do dashboard)
+  no_log: true
+  command: "openssl passwd -apr1 {{ traefik_dashboard_password }}"
+  register: dashboard_hash
+  changed_when: false
+  when: traefik_inspect.rc != 0
+
+- name: "Subir service traefik (unica porta publicada: 80/443)"
+  # --providers.docker.swarmmode=true: traefik descobre SERVICES do swarm
+  # (docker service create com label traefik.*), nao containers soltos.
+  # --constraint node.role==manager: mount do docker.sock so existe no
+  # host onde o service roda; hoje e o unico node (manager), mas trava
+  # aqui pra nao quebrar se um worker entrar no swarm depois.
+  # mode=host (nao ingress): sem routing mesh, bind direto no node — mesmo
+  # comportamento visivel de fora que o `docker run -p 80:80` de antes.
+  # web -> websecure redirect: todo http vira https (inclusive o proprio
+  # acme http-01 challenge, que o traefik trata antes do redirect valer).
+  # Dashboard/api NAO tem --publish: e roteado como um service interno do
+  # proprio traefik (service=api@internal) atras de Host()+basicauth+tls,
+  # a unica forma de nao expor a porta em 0.0.0.0 (swarm publish nao
+  # suporta bind em IP especifico feito 127.0.0.1 — por isso a rota, nao a
+  # porta).
   command: >
-    docker run -d
+    docker service create
     --name traefik
-    --restart=always
     --network {{ traefik_network }}
-    -p 80:80 -p 443:443
-    -p 127.0.0.1:{{ traefik_dashboard_port }}:8080
-    -v /var/run/docker.sock:/var/run/docker.sock:ro
+    --constraint node.role==manager
+    --publish mode=host,published=80,target=80
+    --publish mode=host,published=443,target=443
+    --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock,readonly
+    --mount type=volume,source=traefik_letsencrypt,target=/letsencrypt
+    --label traefik.enable=true
+    --label "traefik.http.routers.dashboard.rule=Host(`{{ traefik_dashboard_host }}`)"
+    --label traefik.http.routers.dashboard.entrypoints=websecure
+    --label traefik.http.routers.dashboard.tls.certresolver=letsencrypt
+    --label traefik.http.routers.dashboard.service=api@internal
+    --label traefik.http.routers.dashboard.middlewares=dashboard-auth
+    --label "traefik.http.middlewares.dashboard-auth.basicauth.users={{ traefik_dashboard_user }}:{{ dashboard_hash.stdout }}"
     {{ traefik_image }}
     --api.dashboard=true
-    --api.insecure=true
     --providers.docker=true
+    --providers.docker.swarmmode=true
     --providers.docker.exposedbydefault=false
     --entrypoints.web.address=:80
+    --entrypoints.web.http.redirections.entrypoint.to=websecure
+    --entrypoints.web.http.redirections.entrypoint.scheme=https
     --entrypoints.websecure.address=:443
+    --certificatesresolvers.letsencrypt.acme.email={{ traefik_acme_email }}
+    --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+    --certificatesresolvers.letsencrypt.acme.caserver={{ traefik_acme_ca_server }}
+    --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+    --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
   when: traefik_inspect.rc != 0
 
-- name: Validar container traefik rodando
-  command: "docker inspect -f {{ '{{.State.Running}}' }} traefik"
-  register: traefik_running
+- name: Mostrar credencial do dashboard (nao reexibida depois)
+  debug:
+    msg: >-
+      Dashboard: https://{{ traefik_dashboard_host }}
+      user={{ traefik_dashboard_user }} pass={{ traefik_dashboard_password }}
+      — guarde agora. Dominio/CA sao placeholders (ver defaults/main.yml):
+      com valores ficticios o Let's Encrypt NAO emite certificado de
+      verdade, o traefik serve um certificado default nao confiavel pro
+      browser ate os dominios reais + CA de producao serem configurados.
+  when: traefik_inspect.rc != 0
+
+- name: Validar service traefik com replica ativa
+  command: "docker service ls --filter name=traefik --format '{{ '{{.Replicas}}' }}'"
+  register: traefik_replicas
   changed_when: false
-  failed_when: traefik_running.stdout | trim != 'true'
+  until: "'1/1' in traefik_replicas.stdout"
+  retries: 10
+  delay: 3

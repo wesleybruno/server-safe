@@ -3,3 +3,5 @@
 /bin/
 *.log
 /ansible/inventory.ini
+/ansible/group_vars/vps.yml
+/ansible/credentials/

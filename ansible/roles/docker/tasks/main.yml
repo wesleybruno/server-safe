@@ -76,3 +76,15 @@
 - name: Validar binario docker presente
   command: docker --version
   changed_when: false
+
+# Swarm mode: single-node manager (sem join de workers por ora). Necessario
+# pra `docker service create` (traefik/portainer) — services normais
+# (`docker run`) nao existem sem um swarm ativo.
+- name: Verificar estado do swarm
+  command: "docker info --format '{{ '{{.Swarm.LocalNodeState}}' }}'"
+  register: swarm_state
+  changed_when: false
+
+- name: Inicializar swarm (manager unico)
+  command: "docker swarm init --advertise-addr {{ ansible_facts.default_ipv4.address }}"
+  when: swarm_state.stdout | trim != 'active'
