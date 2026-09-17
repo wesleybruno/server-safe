@@ -1,0 +1,5 @@
+---
+portainer_image: "portainer/portainer-ce:lts"
+# HTTPS mgmt UI so em loopback, mesma postura do painel server-safe e do
+# traefik dashboard — acesso via tunel SSH, nunca exposto direto.
+portainer_port: 9443

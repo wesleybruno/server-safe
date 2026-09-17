@@ -1,0 +1,78 @@
+---
+# Idempotente: se docker ja estiver instalado (por este playbook, pelo
+# wizard server-safe, ou manualmente), so segue pra garantir o servico
+# ativo, sem reinstalar.
+- name: Verificar se docker ja esta instalado
+  command: docker --version
+  register: docker_check
+  changed_when: false
+  failed_when: false
+
+- name: Instalar docker (familia Debian/Ubuntu)
+  when:
+    - docker_check.rc != 0
+    - ansible_facts.os_family == "Debian"
+  block:
+    - name: Instalar pre-requisitos
+      apt:
+        name: [ca-certificates, curl, gnupg]
+        state: present
+        update_cache: true
+
+    - name: Criar diretorio de keyrings
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Baixar chave GPG oficial do docker
+      get_url:
+        url: "https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}/gpg"
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Adicionar repositorio apt do docker
+      apt_repository:
+        repo: >-
+          deb [arch={{ 'arm64' if ansible_facts.architecture == 'aarch64' else 'amd64' }}
+          signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}
+          {{ ansible_facts.distribution_release }} stable
+        filename: docker
+        state: present
+
+    - name: Instalar pacotes docker
+      apt:
+        name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
+        state: present
+        update_cache: true
+
+- name: Instalar docker (familia RHEL)
+  when:
+    - docker_check.rc != 0
+    - ansible_facts.os_family == "RedHat"
+  block:
+    - name: Instalar dnf-plugins-core
+      dnf:
+        name: dnf-plugins-core
+        state: present
+
+    - name: Adicionar repositorio docker-ce
+      command: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      args:
+        creates: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Instalar pacotes docker
+      dnf:
+        name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
+        state: present
+
+- name: Garantir docker habilitado e ativo
+  systemd:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Validar binario docker presente
+  command: docker --version
+  changed_when: false

@@ -2,3 +2,4 @@
 /server-safe.exe
 /bin/
 *.log
+/ansible/inventory.ini

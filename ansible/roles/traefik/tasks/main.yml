@@ -1,0 +1,40 @@
+---
+- name: Verificar se container traefik ja existe
+  command: docker inspect traefik
+  register: traefik_inspect
+  changed_when: false
+  failed_when: false
+
+- name: Criar rede {{ traefik_network }}
+  command: "docker network create {{ traefik_network }}"
+  register: network_create
+  changed_when: network_create.rc == 0
+  failed_when: network_create.rc != 0 and 'already exists' not in network_create.stderr
+  when: traefik_inspect.rc != 0
+
+- name: "Subir container traefik (80/443 publicas, dashboard so em loopback:{{ traefik_dashboard_port }})"
+  # --api.insecure=true (dashboard sem auth propria) so e aceitavel porque a
+  # porta esta amarrada em 127.0.0.1 — mesma postura do proprio painel
+  # server-safe, acesso via tunel SSH, nunca exposto direto.
+  command: >
+    docker run -d
+    --name traefik
+    --restart=always
+    --network {{ traefik_network }}
+    -p 80:80 -p 443:443
+    -p 127.0.0.1:{{ traefik_dashboard_port }}:8080
+    -v /var/run/docker.sock:/var/run/docker.sock:ro
+    {{ traefik_image }}
+    --api.dashboard=true
+    --api.insecure=true
+    --providers.docker=true
+    --providers.docker.exposedbydefault=false
+    --entrypoints.web.address=:80
+    --entrypoints.websecure.address=:443
+  when: traefik_inspect.rc != 0
+
+- name: Validar container traefik rodando
+  command: "docker inspect -f {{ '{{.State.Running}}' }} traefik"
+  register: traefik_running
+  changed_when: false
+  failed_when: traefik_running.stdout | trim != 'true'

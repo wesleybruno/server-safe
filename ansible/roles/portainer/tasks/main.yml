@@ -1,0 +1,28 @@
+---
+- name: Verificar se container portainer ja existe
+  command: docker inspect portainer
+  register: portainer_inspect
+  changed_when: false
+  failed_when: false
+
+- name: Criar volume portainer_data
+  command: docker volume create portainer_data
+  when: portainer_inspect.rc != 0
+  changed_when: true
+
+- name: "Subir container portainer (mgmt UI so em loopback:{{ portainer_port }})"
+  command: >
+    docker run -d
+    --name portainer
+    --restart=always
+    -p 127.0.0.1:{{ portainer_port }}:9443
+    -v /var/run/docker.sock:/var/run/docker.sock
+    -v portainer_data:/data
+    {{ portainer_image }}
+  when: portainer_inspect.rc != 0
+
+- name: Validar container portainer rodando
+  command: "docker inspect -f {{ '{{.State.Running}}' }} portainer"
+  register: portainer_running
+  changed_when: false
+  failed_when: portainer_running.stdout | trim != 'true'

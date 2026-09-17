@@ -1,0 +1,10 @@
+---
+traefik_image: "traefik:v3.1"
+# 8090, nao 8080 — 8080 e o proprio painel server-safe (ver mapa de portas
+# no CLAUDE.md do repo). So loopback: acesso via tunel SSH, nunca exposto.
+traefik_dashboard_port: 8090
+# Rede compartilhada pra containers de app se conectarem e serem roteados
+# via labels — o script bash do wizard (traefik-install.sh) nao cria essa
+# rede porque so valida o dashboard; aqui criamos de proposito, pensando
+# em deploys de app futuros atras do traefik.
+traefik_network: server-safe-proxy
