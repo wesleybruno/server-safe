@@ -103,10 +103,24 @@ ansible-playbook site.yml app.yml --ask-become-pass
 
 - **docker**: instala Docker CE via repositório oficial (Debian/Ubuntu ou
   RHEL, mesma lógica do `ensure_docker` em `internal/scripts/common.sh`),
-  habilita o serviço, inicializa modo swarm (manager único).
+  habilita o serviço, inicializa modo swarm (manager único) e instala
+  `server-safe-swarm-recovery.service`: no boot, espera o swarm ficar
+  ativo + 60s e dá `docker service update --force` só nos services com
+  réplicas abaixo do desejado (o swarm às vezes falha tasks com "No such
+  container" logo depois de um reboot e não retenta).
 - **traefik**: sobe o service `traefik:v3.1` na rede overlay
   `server-safe-proxy`, publica só 80/443. Dashboard roteado por domínio +
-  basicauth (credencial gerada e mostrada uma vez na criação).
+  basicauth (credencial gerada e mostrada uma vez na criação). Usa o
+  provider **`--providers.swarm`** do Traefik v3 (`providers.docker.swarmMode`
+  foi removido no v3 e derruba o Traefik em crash loop). O hash do
+  basicauth é validado antes de subir: basicauth com usuários vazios faz o
+  Traefik v3 entrar em panic e parar de aplicar qualquer config nova.
+
+> Se você já tinha rodado uma versão anterior deste role (com
+> `--providers.docker.swarmmode`), o service existente não é recriado
+> sozinho (o role só cria se não existir). Rode `docker service rm traefik`
+> na VPS e depois o `site.yml` de novo: o volume `traefik_letsencrypt`
+> (certificados) é preservado.
 - **portainer**: sobe o service `portainer-ce:lts` na mesma rede, sem
   porta publicada — roteado pelo traefik por domínio.
 
@@ -164,6 +178,50 @@ mesmo nome, silenciosamente (não é erro, não avisa). Por isso 1 réplica só
 serviço fica fora do ar até voltar) — HA de banco de verdade precisa da
 replicação própria do banco (streaming replication etc.), fora do escopo
 deste template.
+
+### Rotacionar a senha do banco
+
+O Postgres só lê `POSTGRES_PASSWORD` na **primeira** inicialização do
+volume; depois disso a senha vive dentro de `database_data`. Trocar só o
+arquivo `credentials/database_password` (ou a env do service) não muda a
+senha do banco e derruba a API. Por isso os roles `database` e `api`
+**falham** se o arquivo de credencial sumir enquanto o volume já existe,
+em vez de gerar uma senha nova em silêncio. Para rotacionar:
+
+```bash
+# 1. Na VPS: trocar a senha DENTRO do banco primeiro
+docker exec -it $(docker ps -q -f name=database) \
+  psql -U app -c "ALTER USER app PASSWORD 'NOVA_SENHA';"
+# 2. No control node: gravar a mesma senha no arquivo
+printf '%s' 'NOVA_SENHA' > ansible/credentials/database_password
+# 3. Recriar só a api (o role so cria se nao existir)
+docker service rm api   # na VPS
+ansible-playbook app.yml --ask-become-pass
+```
+
+Guarde também uma cópia de `credentials/database_password` num gerenciador
+de senhas: é a única cópia fora do banco.
+
+## Operação: o que não fazer
+
+Lições de incidentes reais em produção com esta mesma arquitetura:
+
+- **Nunca** `docker service update --force traefik` para resolver um
+  problema de *outro* service. Force update só no service afetado. Reiniciar
+  o Traefik derruba o roteamento de todos.
+- Antes de `docker stack deploy` com bind mount de **arquivo** novo, confira
+  se o arquivo existe na VPS: se não existir, o Docker cria um *diretório*
+  no lugar e o service quebra.
+- Nunca edite YAML de config com `cat >>` (append): duplica chaves e
+  corrompe o arquivo. Sobrescreva o arquivo inteiro.
+- Labels de basicauth nunca podem ficar vazios (variável de ambiente não
+  definida no deploy vira `basicauth.users=`). Se o Traefik responder 404
+  para um service saudável e o log tiver `ERR Error in Go routine`, o
+  ConfigurationWatcher morreu: corrija o label e só então reinicie o task
+  do Traefik.
+- Depois de um reboot, confira `docker service ls` (réplicas `0/1`); o
+  `server-safe-swarm-recovery.service` cobre o caso comum, e
+  `journalctl -u server-safe-swarm-recovery` mostra o que ele fez.
 
 ## Variáveis
 

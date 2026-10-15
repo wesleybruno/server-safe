@@ -28,13 +28,13 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 | # | Step | O que faz |
 |---|------|-----------|
 | 1 | Usuário | Cria usuário sudo novo; gera chave SSH ed25519 ou aceita chave pública importada; gera senha local aleatória (só `sudo`/`su`) |
-| 2 | SSH | Muda a porta, desativa login por senha e/ou root |
+| 2 | SSH | Muda a porta, desativa login por senha e/ou root, garante o ssh habilitado no boot e mostra um resumo de acesso pra guardar fora do servidor (IP, porta, usuário, comando e fingerprints das host keys) |
 | 3 | Firewall | Ativa UFW com política deny-default, libera a porta SSH + portas extras |
 | 4 | Fail2ban | Jail do sshd configurável (bantime / findtime / maxretry) |
-| 5 | Atualizações automáticas | `unattended-upgrades` (Debian/Ubuntu) ou `dnf-automatic` (RHEL/Fedora) |
+| 5 | Atualizações automáticas | `unattended-upgrades` (Debian/Ubuntu) ou `dnf-automatic` (RHEL/Fedora). Reboot automático opcional numa **janela semanal** (dia + horário), só se alguma atualização exigir — nunca o reboot diário do `unattended-upgrades` |
 | 6 | Timers de app | Cria par `.service`/`.timer` do systemd genérico, para restart periódico de qualquer serviço |
 | 7 | Libs extras | Instala libs adicionais, uma por botão, organizadas por categoria — Containers (Docker, Portainer, Traefik), Painéis de hospedagem (Coolify, EasyPanel, cPanel/WHM), Logs (Dozzle, Loki), Monitoramento (cAdvisor, Prometheus, Grafana, Uptime Kuma, Zabbix, SigNoz), Backup (Restic — campos próprios de repo/paths/agenda) |
-| 8 | Auditoria final | Checa portas expostas pra fora (loopback fica de fora da lista), sudoers com NOPASSWD, contas com UID 0 extra, permissões de `.ssh`, roda `lynis` se disponível |
+| 8 | Auditoria final | Checa portas expostas pra fora (loopback fica de fora da lista), ssh habilitado no boot, sudoers com NOPASSWD, contas com UID 0 extra, permissões de `.ssh`, reboot diário sem janela e reboot pendente, roda `lynis` se disponível |
 | 9 | Limpeza | Agenda o self-destruct do painel + remoção de arquivos temporários. Duas opções extras (desmarcadas por padrão, com confirmação): parar todos os containers Docker, ou parar+remover todos os containers e imagens — rodam na hora, afetam a máquina inteira, não só o que o wizard instalou |
 
 ## Acesso via túnel SSH

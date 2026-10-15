@@ -49,8 +49,37 @@
     state: directory
     mode: "0700"
 
+# O postgres so le POSTGRES_PASSWORD na PRIMEIRA inicializacao do volume —
+# depois a senha vive dentro de database_data. Se o volume ja existe e o
+# arquivo de credencial sumiu (maquina de controle nova, git clean, outro
+# operador), o lookup abaixo geraria uma senha NOVA em silencio, a api
+# passaria a usar essa senha e o banco recusaria: API fora do ar
+# (incidente iestoque 2026-04-22, secret dessincronizado). Falha aqui em
+# vez de gerar.
+- name: Verificar arquivo de credencial do banco no control node
+  delegate_to: localhost
+  become: false
+  run_once: true
+  stat:
+    path: "{{ playbook_dir }}/credentials/database_password"
+  register: database_password_file
+
+- name: Recusar gerar senha nova com volume do banco ja existente
+  fail:
+    msg: >-
+      O volume database_data ja existe na VPS, mas
+      {{ playbook_dir }}/credentials/database_password nao existe aqui.
+      Gerar uma senha nova agora deixaria a api com uma senha que o banco
+      nao conhece. Restaure o arquivo (gerenciador de senhas/backup) ou
+      rotacione a senha DENTRO do banco primeiro
+      (ver "Rotacionar a senha do banco" em ansible/README.md).
+  when:
+    - database_volume.rc == 0
+    - not database_password_file.stat.exists
+
 # lookup password: le o arquivo se ja existir (mesmo valor sempre —
-# idempotente entre reruns e entre roles), gera e grava so se ausente.
+# idempotente entre reruns e entre roles), gera e grava so se ausente
+# (e so chega aqui ausente se o volume tambem e novo, ver acima).
 - name: Gerar/ler senha do banco
   no_log: true
   set_fact:

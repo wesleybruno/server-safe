@@ -48,6 +48,20 @@ if command -v sshd &>/dev/null; then
     check "ssh-password-auth" "warn" "login por senha ainda habilitado"
   fi
 
+  # sshd fora do autostart = servidor sem ssh no proximo reboot, so o
+  # rescue do provedor resolve (incidente iestoque 2026-04-22).
+  SSH_BOOT=""
+  for unit in ssh.service sshd.service ssh.socket sshd.socket; do
+    case "$(systemctl is-enabled "$unit" 2>/dev/null)" in
+      enabled|static|indirect|alias) SSH_BOOT="$unit"; break ;;
+    esac
+  done
+  if [[ -n "$SSH_BOOT" ]]; then
+    check "ssh-boot" "ok" "$SSH_BOOT habilitado no boot"
+  else
+    check "ssh-boot" "fail" "nenhuma unit ssh/sshd habilitada no boot — um reboot deixaria o servidor sem ssh"
+  fi
+
   if [[ -n "$SSH_PORT" ]]; then
     if echo "$EFFECTIVE" | grep -qi "^port $SSH_PORT\$"; then
       check "ssh-porta" "ok" "sshd escutando na porta esperada $SSH_PORT"
@@ -109,6 +123,24 @@ if systemctl is-enabled unattended-upgrades &>/dev/null || systemctl is-enabled 
   check "auto-updates" "ok" "atualizacoes automaticas habilitadas"
 else
   check "auto-updates" "warn" "atualizacoes automaticas nao configuradas"
+fi
+
+# Reboot diario do proprio unattended-upgrades (sem janela) reinicia na
+# primeira oportunidade depois de um update de kernel — o server-safe usa
+# janela semanal propria (auto-updates.sh), ver incidente iestoque
+# 2026-05-21.
+if command -v apt-config &>/dev/null; then
+  if apt-config dump 2>/dev/null | grep -qi '^Unattended-Upgrade::Automatic-Reboot "true"'; then
+    check "reboot-sem-janela" "warn" "unattended-upgrades com Automatic-Reboot diario — prefira a janela semanal da etapa de atualizacoes"
+  else
+    check "reboot-sem-janela" "ok" "sem reboot automatico diario do unattended-upgrades"
+  fi
+fi
+
+if [[ -f /var/run/reboot-required ]]; then
+  check "reboot-pendente" "warn" "ha atualizacao aguardando reboot (/var/run/reboot-required)"
+else
+  check "reboot-pendente" "ok" "nenhum reboot pendente"
 fi
 
 if command -v lynis &>/dev/null; then

@@ -50,9 +50,30 @@
   changed_when: false
   when: traefik_inspect.rc != 0
 
+# Um basicauth com users vazio faz o traefik v3 dar panic dentro do
+# ConfigurationWatcher: a goroutine morre e NENHUMA config nova e aplicada
+# ate reiniciar o task (incidente iestoque 2026-04-24). Barra aqui, antes
+# do label chegar no service.
+- name: Validar hash do basicauth do dashboard (nunca vazio)
+  assert:
+    that:
+      - dashboard_hash.stdout | default('') | length > 0
+      - dashboard_hash.stdout.startswith('$apr1$')
+    fail_msg: "hash do basicauth vazio/invalido — traefik v3 entraria em panic com users vazio"
+    quiet: true
+  when: traefik_inspect.rc != 0
+
 - name: "Subir service traefik (unica porta publicada: 80/443)"
-  # --providers.docker.swarmmode=true: traefik descobre SERVICES do swarm
-  # (docker service create com label traefik.*), nao containers soltos.
+  # --providers.swarm: traefik descobre SERVICES do swarm (docker service
+  # create com label traefik.*), nao containers soltos. NAO usar
+  # --providers.docker.swarmmode: foi removido no traefik v3 e derruba o
+  # traefik em crash loop (incidente iestoque 2026-04-24).
+  # --providers.swarm.network: services em mais de uma rede (ex: api, em
+  # proxy + app-data) precisam dizer por qual rede o traefik chega neles.
+  # Label dummy-svc...port: o provider swarm nao detecta porta sozinho e
+  # descarta a config de um service com label traefik.* sem porta — o
+  # dashboard (service=api@internal) nao usa essa porta, ela so existe pra
+  # o proprio service traefik nao ser ignorado.
   # --constraint node.role==manager: mount do docker.sock so existe no
   # host onde o service roda; hoje e o unico node (manager), mas trava
   # aqui pra nao quebrar se um worker entrar no swarm depois.
@@ -81,11 +102,12 @@
     --label traefik.http.routers.dashboard.service=api@internal
     --label traefik.http.routers.dashboard.middlewares=dashboard-auth
     --label "traefik.http.middlewares.dashboard-auth.basicauth.users={{ traefik_dashboard_user }}:{{ dashboard_hash.stdout }}"
+    --label traefik.http.services.dummy-svc.loadbalancer.server.port=9999
     {{ traefik_image }}
     --api.dashboard=true
-    --providers.docker=true
-    --providers.docker.swarmmode=true
-    --providers.docker.exposedbydefault=false
+    --providers.swarm=true
+    --providers.swarm.exposedbydefault=false
+    --providers.swarm.network={{ traefik_network }}
     --entrypoints.web.address=:80
     --entrypoints.web.http.redirections.entrypoint.to=websecure
     --entrypoints.web.http.redirections.entrypoint.scheme=https
