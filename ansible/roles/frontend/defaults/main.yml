@@ -1,0 +1,9 @@
+---
+# Placeholder ficticio de proposito — troque pela imagem real do seu
+# projeto (group_vars/vps.yml ou -e) antes de rodar app.yml contra uma
+# VPS de verdade.
+frontend_image: "registry.example.com/frontend:latest"
+frontend_network: "{{ server_safe_proxy_network }}"
+frontend_host: "app.example.com"
+frontend_container_port: 80
+frontend_replicas: 1

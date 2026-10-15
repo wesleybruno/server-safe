@@ -1,0 +1,24 @@
+---
+traefik_image: "traefik:v3.1"
+traefik_network: "{{ server_safe_proxy_network }}"
+# Unica porta exposta do stack inteiro (80/443, publico de proposito — e o
+# roteador). Dashboard NAO publica porta nenhuma: e roteado pelo proprio
+# traefik via label (Host + basicauth), ver tasks/main.yml.
+#
+# Placeholders ficticios de proposito — este e um template white-label,
+# nao um deploy real. Sobrescreva TODOS os 4 abaixo (group_vars/vps.yml ou
+# -e) antes de rodar contra uma VPS de verdade:
+#   - traefik_dashboard_host / portainer_host: dominios que nao existem
+#     (example.com e reservado pela IANA, nunca vai resolver pro IP real)
+#   - traefik_acme_email: e-mail ficticio, Let's Encrypt rejeita na hora
+#     de validar com dominio de verdade de qualquer forma
+#   - traefik_acme_ca_server: staging por padrao (ver abaixo) — troque pra
+#     producao so quando os dominios reais ja resolverem pro IP da VPS
+traefik_dashboard_host: "traefik.example.com"
+traefik_dashboard_user: "admin"
+traefik_acme_email: "admin@example.com"
+# Staging: certificados nao confiaveis pelo browser, mas SEM rate limit
+# agressivo — seguro pra testar o template repetidas vezes. Producao:
+# https://acme-v02.api.letsencrypt.org/directory (rate limit por dominio,
+# so troque quando o dominio real ja estiver resolvendo pro IP da VPS).
+traefik_acme_ca_server: "https://acme-staging-v02.api.letsencrypt.org/directory"

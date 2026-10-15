@@ -90,6 +90,19 @@ for unit in ssh sshd; do
 done
 [[ -n "$SSH_UNIT" ]] || fail "nao encontrei unit systemd do ssh (ssh/sshd)"
 
+# Garante que o ssh sobe sozinho no proximo boot. Sem isso, um reboot
+# (ex: atualizacao de kernel) pode deixar o servidor sem sshd e so o
+# rescue mode do provedor resolve (incidente iestoque 2026-04-22).
+# is-enabled aceita enabled/static/indirect/alias: static = sem [Install]
+# proprio, mas puxado por outra unit (caso do ssh.socket em algumas
+# imagens), tambem sobe no boot.
+boot_enabled() {
+  case "$(systemctl is-enabled "$1" 2>/dev/null)" in
+    enabled|static|indirect|alias) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 if systemctl list-unit-files "$SSH_UNIT.socket" --no-legend --plain 2>/dev/null | grep -q "^$SSH_UNIT\.socket"; then
   # Ubuntu 24.04+ ativa o sshd via socket activation por padrao: quem
   # escuta a porta e o $SSH_UNIT.socket (fica "static", nao "enabled"), o
@@ -103,13 +116,23 @@ if systemctl list-unit-files "$SSH_UNIT.socket" --no-legend --plain 2>/dev/null 
     echo "ListenStream=$SS_NEW_PORT"
   } > "/etc/systemd/system/$SSH_UNIT.socket.d/99-server-safe.conf"
   systemctl daemon-reload
+  if ! boot_enabled "$SSH_UNIT.socket"; then
+    echo "==> habilitando $SSH_UNIT.socket no boot"
+    systemctl enable "$SSH_UNIT.socket" 2>&1 || true
+  fi
   echo "==> reiniciando $SSH_UNIT.socket"
   systemctl restart "$SSH_UNIT.socket"
+  BOOT_UNIT="$SSH_UNIT.socket"
 else
+  if ! boot_enabled "$SSH_UNIT.service"; then
+    echo "==> habilitando $SSH_UNIT.service no boot"
+    systemctl enable "$SSH_UNIT.service" 2>&1 || true
+  fi
   # restart (nao reload): reload nao reabre o listener socket na porta nova.
   # conexoes ja estabelecidas continuam ativas durante o restart.
   echo "==> reiniciando $SSH_UNIT.service"
   systemctl restart "$SSH_UNIT.service"
+  BOOT_UNIT="$SSH_UNIT.service"
 fi
 
 sleep 1
@@ -126,5 +149,31 @@ if [[ "$DISABLE_PASSWORD" == "true" ]]; then
   echo "$EFFECTIVE" | grep -qi "^passwordauthentication no$" || fail "passwordauthentication nao aplicado"
 fi
 
+if boot_enabled "$BOOT_UNIT" || boot_enabled "$SSH_UNIT.service"; then
+  echo "==> $BOOT_UNIT habilitado no boot"
+else
+  fail "$BOOT_UNIT nao esta habilitado no boot — um reboot deixaria o servidor sem ssh. Rode: systemctl enable $BOOT_UNIT"
+fi
+
+# Dados pra guardar FORA do servidor: o incidente de 2026-04-22 levou ~1h
+# a mais porque porta/usuario nao estavam anotados e nao havia como saber
+# se a host key mudou de forma legitima. Fingerprints das host keys
+# permitem conferir um "REMOTE HOST IDENTIFICATION HAS CHANGED" depois.
+HOST_KEYS=""
+for pub in /etc/ssh/ssh_host_*_key.pub; do
+  [[ -f "$pub" ]] || continue
+  fp=$(ssh-keygen -lf "$pub" 2>/dev/null) || continue
+  HOST_KEYS+="$fp"$'\n'
+done
+HOST_KEYS="${HOST_KEYS%$'\n'}"
+# Primeiro IP global da interface de saida — numa VPS (Hetzner etc.) e o
+# IP publico. Atras de NAT pode ser IP privado; a UI deixa claro que e o
+# "IP detectado".
+SERVER_IP=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1;i<NF;i++) if ($i=="src") {print $(i+1); exit}}' || true)
+[[ -n "$SERVER_IP" ]] || SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || true)
+
+echo "==> fingerprints das host keys (guarde fora do servidor):"
+echo "$HOST_KEYS"
+
 echo "==> ok, ssh escutando na porta $SS_NEW_PORT"
-result "ok" "ssh hardened na porta $SS_NEW_PORT" "{\"port\":$SS_NEW_PORT,\"password_disabled\":$DISABLE_PASSWORD,\"root_disabled\":$DISABLE_ROOT}"
+result "ok" "ssh hardened na porta $SS_NEW_PORT" "{\"port\":$SS_NEW_PORT,\"password_disabled\":$DISABLE_PASSWORD,\"root_disabled\":$DISABLE_ROOT,\"server_ip\":\"$(json_escape "$SERVER_IP")\",\"host_keys\":\"$(json_escape "$HOST_KEYS")\"}"

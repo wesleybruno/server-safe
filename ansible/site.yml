@@ -1,0 +1,7 @@
+- name: Configurar VPS (Docker + Traefik + Portainer)
+  hosts: vps
+  become: true
+  roles:
+    - docker
+    - traefik
+    - portainer

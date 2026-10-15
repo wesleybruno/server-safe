@@ -1,0 +1,145 @@
+---
+# Idempotente: se docker ja estiver instalado (por este playbook, pelo
+# wizard server-safe, ou manualmente), so segue pra garantir o servico
+# ativo, sem reinstalar.
+- name: Verificar se docker ja esta instalado
+  command: docker --version
+  register: docker_check
+  changed_when: false
+  failed_when: false
+
+- name: Instalar docker (familia Debian/Ubuntu)
+  when:
+    - docker_check.rc != 0
+    - ansible_facts.os_family == "Debian"
+  block:
+    - name: Instalar pre-requisitos
+      apt:
+        name: [ca-certificates, curl, gnupg]
+        state: present
+        update_cache: true
+
+    - name: Criar diretorio de keyrings
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Baixar chave GPG oficial do docker
+      get_url:
+        url: "https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}/gpg"
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Adicionar repositorio apt do docker
+      apt_repository:
+        repo: >-
+          deb [arch={{ 'arm64' if ansible_facts.architecture == 'aarch64' else 'amd64' }}
+          signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}
+          {{ ansible_facts.distribution_release }} stable
+        filename: docker
+        state: present
+
+    - name: Instalar pacotes docker
+      apt:
+        name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
+        state: present
+        update_cache: true
+
+- name: Instalar docker (familia RHEL)
+  when:
+    - docker_check.rc != 0
+    - ansible_facts.os_family == "RedHat"
+  block:
+    - name: Instalar dnf-plugins-core
+      dnf:
+        name: dnf-plugins-core
+        state: present
+
+    - name: Adicionar repositorio docker-ce
+      command: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      args:
+        creates: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Instalar pacotes docker
+      dnf:
+        name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
+        state: present
+
+- name: Garantir docker habilitado e ativo
+  systemd:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Validar binario docker presente
+  command: docker --version
+  changed_when: false
+
+# Swarm mode: single-node manager (sem join de workers por ora). Necessario
+# pra `docker service create` (traefik/portainer) — services normais
+# (`docker run`) nao existem sem um swarm ativo.
+- name: Verificar estado do swarm
+  command: "docker info --format '{{ '{{.Swarm.LocalNodeState}}' }}'"
+  register: swarm_state
+  changed_when: false
+
+- name: Inicializar swarm (manager unico)
+  command: "docker swarm init --advertise-addr {{ ansible_facts.default_ipv4.address }}"
+  when: swarm_state.stdout | trim != 'active'
+
+# Recuperacao de services do swarm apos boot. Logo depois de um reboot o
+# manager reconcilia o estado desejado antes do daemon estar 100% pronto e
+# alguns tasks falham com "No such container" sem retentar o suficiente —
+# ficam 0/1 em silencio ate alguem notar (incidente iestoque 2026-05-21:
+# 9h de observabilidade fora). Generico de proposito: nao lista services
+# por nome, forca update so de quem estiver com replicas abaixo do desejado.
+- name: Instalar script de recuperacao do swarm no boot
+  copy:
+    dest: /usr/local/sbin/server-safe-swarm-recovery.sh
+    mode: "0755"
+    content: |
+      #!/usr/bin/env bash
+      # gerado por server-safe (ansible/roles/docker), nao editar manualmente
+      set -uo pipefail
+      for _ in $(seq 1 60); do
+        [ "$(docker info --format '{{ '{{.Swarm.LocalNodeState}}' }}' 2>/dev/null)" = "active" ] && break
+        sleep 5
+      done
+      # folga pro scheduler terminar a primeira rodada de reconciliacao
+      sleep 60
+      docker service ls --format '{{ '{{.Name}} {{.Replicas}}' }}' | while read -r name replicas; do
+        replicas="${replicas%% *}"
+        running="${replicas%%/*}"
+        desired="${replicas##*/}"
+        if [ -n "$desired" ] && [ "$running" -lt "$desired" ] 2>/dev/null; then
+          echo "server-safe: $name com $running/$desired replicas apos boot, forcando update"
+          docker service update --force --detach "$name" || echo "server-safe: falha ao forcar $name"
+        fi
+      done
+
+- name: Instalar unit de recuperacao do swarm no boot
+  copy:
+    dest: /etc/systemd/system/server-safe-swarm-recovery.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=server-safe: recupera services do swarm abaixo do desejado apos boot
+      After=docker.service network-online.target
+      Wants=network-online.target
+      Requires=docker.service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/server-safe-swarm-recovery.sh
+      TimeoutStartSec=10min
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Habilitar recuperacao do swarm no boot
+  systemd:
+    name: server-safe-swarm-recovery.service
+    enabled: true
+    daemon_reload: true

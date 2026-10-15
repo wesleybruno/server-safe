@@ -242,6 +242,40 @@ $("#btn-create-user").addEventListener("click", async () => {
   );
 });
 
+// Resumo de acesso pra guardar fora do servidor: porta nao-padrao, usuario
+// e fingerprints das host keys — o que faltou anotado no incidente em que o
+// acesso SSH foi perdido e so o rescue mode do provedor resolveu.
+function showAccessSummary(port, body, data) {
+  const user = $("#u-username").value.trim() || "<usuario>";
+  const ip = data.server_ip || "<ip-do-servidor>";
+  const lines = [
+    "Servidor: " + ip + " (IP detectado)",
+    "Porta SSH: " + port,
+    "Usuario: " + user,
+    "Login root: " + (body.disable_root ? "bloqueado" : "permitido"),
+    "Login por senha: " + (body.disable_password ? "desativado" : "ativo"),
+    "Comando: ssh -i <sua-chave-privada> -p " + port + " " + user + "@" + ip,
+    "Fingerprints das host keys:",
+    data.host_keys || "(nao encontradas)",
+  ];
+  $("#s-access-value").value = lines.join("\n");
+  $("#s-access-box").classList.remove("hidden");
+}
+
+$("#s-access-copy").addEventListener("click", async () => {
+  const input = $("#s-access-value");
+  input.select();
+  try {
+    await navigator.clipboard.writeText(input.value);
+    const btn = $("#s-access-copy");
+    const original = btn.textContent;
+    btn.textContent = "copiado!";
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch {
+    // mesmo fallback do copiar senha: o select() acima ja deixa pronto pro Ctrl+C.
+  }
+});
+
 $("#btn-harden-ssh").addEventListener("click", async () => {
   const port = parseInt($("#s-port").value, 10);
   const body = {
@@ -263,6 +297,7 @@ $("#btn-harden-ssh").addEventListener("click", async () => {
       if (result.status === "ok") {
         // propaga a porta escolhida para os steps seguintes que dependem dela
         ["#fw-ssh-port", "#f2b-ssh-port", "#au-ssh-port"].forEach((sel) => ($(sel).value = port));
+        showAccessSummary(port, body, result.data || {});
       }
     },
     (err) => {
@@ -325,6 +360,7 @@ $("#btn-fail2ban").addEventListener("click", async () => {
 $("#btn-updates").addEventListener("click", async () => {
   const body = {
     auto_reboot: $("#upd-auto-reboot").checked,
+    reboot_day: $("#upd-reboot-day").value,
     reboot_time: $("#upd-reboot-time").value.trim(),
   };
   const log = $("#upd-log");

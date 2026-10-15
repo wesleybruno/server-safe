@@ -1,0 +1,126 @@
+---
+- name: Verificar se rede {{ database_network }} existe
+  command: "docker network inspect {{ database_network }}"
+  register: db_network_inspect
+  changed_when: false
+  failed_when: false
+
+# --attachable so por consistencia com server-safe-proxy (permite anexar
+# um container solto de debug se precisar inspecionar o banco na mao).
+- name: Criar rede overlay {{ database_network }}
+  command: "docker network create --driver overlay --attachable {{ database_network }}"
+  when: db_network_inspect.rc != 0
+
+# `self` = o node local. Cenario de 1 node so: e o unico node que existe.
+# Quando entrar um segundo node (estudo a parte), o label so precisa ser
+# movido pro node de destino — o --constraint do service abaixo nao muda.
+- name: "Rotular este node como tier={{ database_node_label }}"
+  command: "docker node update --label-add tier={{ database_node_label }} self"
+  changed_when: false
+
+- name: Verificar se volume database_data existe
+  command: docker volume inspect database_data
+  register: database_volume
+  changed_when: false
+  failed_when: false
+
+- name: Criar volume database_data
+  command: docker volume create database_data
+  when: database_volume.rc != 0
+
+- name: Verificar se service database ja existe
+  command: docker service inspect database
+  register: database_inspect
+  changed_when: false
+  failed_when: false
+
+# Diferente da senha do dashboard do traefik (mostrada uma vez so, nunca
+# persistida): esta o role api precisa ler de novo em TODA execucao
+# (conexao com o banco nao e coisa de humano ver uma vez, e credencial
+# de maquina-pra-maquina). Por isso arquivo de verdade no control node,
+# nao /dev/null — gitignored (ver .gitignore), fora do arquivo o valor
+# some.
+- name: Garantir diretorio de credenciais no control node
+  delegate_to: localhost
+  become: false
+  run_once: true
+  file:
+    path: "{{ playbook_dir }}/credentials"
+    state: directory
+    mode: "0700"
+
+# O postgres so le POSTGRES_PASSWORD na PRIMEIRA inicializacao do volume —
+# depois a senha vive dentro de database_data. Se o volume ja existe e o
+# arquivo de credencial sumiu (maquina de controle nova, git clean, outro
+# operador), o lookup abaixo geraria uma senha NOVA em silencio, a api
+# passaria a usar essa senha e o banco recusaria: API fora do ar
+# (incidente iestoque 2026-04-22, secret dessincronizado). Falha aqui em
+# vez de gerar.
+- name: Verificar arquivo de credencial do banco no control node
+  delegate_to: localhost
+  become: false
+  run_once: true
+  stat:
+    path: "{{ playbook_dir }}/credentials/database_password"
+  register: database_password_file
+
+- name: Recusar gerar senha nova com volume do banco ja existente
+  fail:
+    msg: >-
+      O volume database_data ja existe na VPS, mas
+      {{ playbook_dir }}/credentials/database_password nao existe aqui.
+      Gerar uma senha nova agora deixaria a api com uma senha que o banco
+      nao conhece. Restaure o arquivo (gerenciador de senhas/backup) ou
+      rotacione a senha DENTRO do banco primeiro
+      (ver "Rotacionar a senha do banco" em ansible/README.md).
+  when:
+    - database_volume.rc == 0
+    - not database_password_file.stat.exists
+
+# lookup password: le o arquivo se ja existir (mesmo valor sempre —
+# idempotente entre reruns e entre roles), gera e grava so se ausente
+# (e so chega aqui ausente se o volume tambem e novo, ver acima).
+- name: Gerar/ler senha do banco
+  no_log: true
+  set_fact:
+    database_password: "{{ lookup('password', playbook_dir + '/credentials/database_password length=24 chars=ascii_letters,digits') }}"
+
+- name: "Subir service database (sem rede publica, sem label traefik — nao roteavel)"
+  # --constraint node.labels.tier==db: trava a task sempre no mesmo node,
+  # onde o volume database_data de fato tem o dado (volume `local` e por
+  # node — reagendar em outro node criaria um volume vazio com o mesmo
+  # nome, dado "sumiria" em silencio). --replicas 1 de proposito: replicar
+  # banco via swarm cria copias independentes, nao um cluster sincronizado
+  # (ver ansible/README.md).
+  command: >
+    docker service create
+    --name database
+    --replicas 1
+    --network {{ database_network }}
+    --constraint node.labels.tier=={{ database_node_label }}
+    --mount type=volume,source=database_data,target=/var/lib/postgresql/data
+    --env POSTGRES_DB={{ database_name }}
+    --env POSTGRES_USER={{ database_user }}
+    --env POSTGRES_PASSWORD={{ database_password }}
+    {{ database_image }}
+  when: database_inspect.rc != 0
+  no_log: true
+
+- name: Mostrar credencial do banco
+  debug:
+    msg: >-
+      Database: host=database porta=5432 (so dentro da rede
+      {{ database_network }}, nunca exposto)
+      db={{ database_name }} user={{ database_user }}
+      pass={{ database_password }}
+      — persistida em {{ playbook_dir }}/credentials/database_password
+      no control node (gitignored), o role api le de la sozinho.
+  when: database_inspect.rc != 0
+
+- name: Validar service database com replica ativa
+  command: "docker service ls --filter name=database --format '{{ '{{.Replicas}}' }}'"
+  register: database_replicas
+  changed_when: false
+  until: "'1/1' in database_replicas.stdout"
+  retries: 10
+  delay: 3

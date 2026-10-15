@@ -1,0 +1,7 @@
+- name: Configurar stack de app (Database + API + Frontend)
+  hosts: vps
+  become: true
+  roles:
+    - database
+    - api
+    - frontend

@@ -28,13 +28,13 @@ Toda máquina Linux nova exige o mesmo checklist manual: trocar porta SSH, desat
 | # | Step | O que faz |
 |---|------|-----------|
 | 1 | Usuário | Cria usuário sudo novo; gera chave SSH ed25519 ou aceita chave pública importada; gera senha local aleatória (só `sudo`/`su`) |
-| 2 | SSH | Muda a porta, desativa login por senha e/ou root |
+| 2 | SSH | Muda a porta, desativa login por senha e/ou root, garante o ssh habilitado no boot e mostra um resumo de acesso pra guardar fora do servidor (IP, porta, usuário, comando e fingerprints das host keys) |
 | 3 | Firewall | Ativa UFW com política deny-default, libera a porta SSH + portas extras |
 | 4 | Fail2ban | Jail do sshd configurável (bantime / findtime / maxretry) |
-| 5 | Atualizações automáticas | `unattended-upgrades` (Debian/Ubuntu) ou `dnf-automatic` (RHEL/Fedora) |
+| 5 | Atualizações automáticas | `unattended-upgrades` (Debian/Ubuntu) ou `dnf-automatic` (RHEL/Fedora). Reboot automático opcional numa **janela semanal** (dia + horário), só se alguma atualização exigir — nunca o reboot diário do `unattended-upgrades` |
 | 6 | Timers de app | Cria par `.service`/`.timer` do systemd genérico, para restart periódico de qualquer serviço |
 | 7 | Libs extras | Instala libs adicionais, uma por botão, organizadas por categoria — Containers (Docker, Portainer, Traefik), Painéis de hospedagem (Coolify, EasyPanel, cPanel/WHM), Logs (Dozzle, Loki), Monitoramento (cAdvisor, Prometheus, Grafana, Uptime Kuma, Zabbix, SigNoz), Backup (Restic — campos próprios de repo/paths/agenda) |
-| 8 | Auditoria final | Checa portas expostas pra fora (loopback fica de fora da lista), sudoers com NOPASSWD, contas com UID 0 extra, permissões de `.ssh`, roda `lynis` se disponível |
+| 8 | Auditoria final | Checa portas expostas pra fora (loopback fica de fora da lista), ssh habilitado no boot, sudoers com NOPASSWD, contas com UID 0 extra, permissões de `.ssh`, reboot diário sem janela e reboot pendente, roda `lynis` se disponível |
 | 9 | Limpeza | Agenda o self-destruct do painel + remoção de arquivos temporários. Duas opções extras (desmarcadas por padrão, com confirmação): parar todos os containers Docker, ou parar+remover todos os containers e imagens — rodam na hora, afetam a máquina inteira, não só o que o wizard instalou |
 
 ## Acesso via túnel SSH
@@ -96,6 +96,10 @@ Alternativa (não usada aqui de propósito): configurar `NOPASSWD` no sudoers pr
 O extra Restic (etapa 7) instala o `restic`, inicializa o repositório informado (aceita path local, `sftp:`, `s3:`, `b2:`, qualquer sintaxe que o restic entenda — a UI não tem formulário por provedor, é a mesma string que você usaria no `restic -r`) e agenda backup + `forget --prune` (retenção fixa: 7 diários, 4 semanais, 6 mensais) via `systemd timer`.
 
 A senha do repositório é gerada uma vez (mesma lógica da senha do usuário: 20 caracteres, mostrada uma única vez na UI com botão de copiar) e fica em `/etc/restic/password` (`600`, só root). **Sem essa senha os backups ficam ilegíveis pra sempre** — anote assim que aparecer na tela, não tem como recuperar depois.
+
+## Configuração pós-wizard (Ansible)
+
+Depois do hardening inicial, `ansible/` (playbooks rodados da sua máquina, não do binário Go) configura Docker Swarm + Traefik + Portainer na VPS, reaproveitando o usuário/chave que o wizard criou. Detalhes, pré-requisitos e um template opcional de stack de app (Database/API/Frontend) em [ansible/README.md](ansible/README.md).
 
 ## Proteções anti-lockout
 

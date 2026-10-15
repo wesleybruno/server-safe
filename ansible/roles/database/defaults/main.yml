@@ -1,0 +1,10 @@
+---
+database_image: "postgres:16-alpine"
+database_network: "{{ app_data_network }}"
+database_name: "{{ app_database_name }}"
+database_user: "{{ app_database_user }}"
+# Label do node onde o banco fica preso (--constraint node.labels.tier==db).
+# Cenario de 1 node so: sempre o mesmo (unico) node. Existe desde ja pra
+# nao precisar mexer no service quando um segundo node entrar (estudo a
+# parte, ver README) — so o valor do label muda de node, o service nao.
+database_node_label: "db"

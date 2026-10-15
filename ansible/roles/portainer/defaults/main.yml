@@ -1,0 +1,6 @@
+---
+portainer_image: "portainer/portainer-ce:lts"
+portainer_network: "{{ server_safe_proxy_network }}"
+# Nenhuma porta publicada — acesso so via traefik (Host + rede overlay).
+# Sobrescreva com um dominio de verdade (DNS apontando pro IP da VPS).
+portainer_host: "portainer.example.com"

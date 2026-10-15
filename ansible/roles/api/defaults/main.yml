@@ -1,0 +1,10 @@
+---
+# Placeholder ficticio de proposito (nao existe "imagem generica de API") —
+# troque pela imagem real do seu projeto (group_vars/vps.yml ou -e) antes
+# de rodar app.yml contra uma VPS de verdade.
+api_image: "registry.example.com/api:latest"
+api_network: "{{ server_safe_proxy_network }}"
+api_data_network: "{{ app_data_network }}"
+api_host: "api.example.com"
+api_container_port: 3000
+api_replicas: 1

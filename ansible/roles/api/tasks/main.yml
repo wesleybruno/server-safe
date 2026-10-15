@@ -1,0 +1,63 @@
+---
+# Mesmo arquivo que o role database gerou/leu — le o valor persistido no
+# control node, nao depende de rodar database antes na mesma execucao
+# (so precisa ter rodado alguma vez). Se o arquivo nao existir, falha em
+# vez de deixar o lookup gerar uma senha nova: a api subiria com uma
+# senha que o banco nao conhece (incidente iestoque 2026-04-22).
+- name: Verificar arquivo de credencial do banco no control node
+  delegate_to: localhost
+  become: false
+  run_once: true
+  stat:
+    path: "{{ playbook_dir }}/credentials/database_password"
+  register: database_password_file
+
+- name: Recusar subir a api sem a credencial do banco
+  fail:
+    msg: >-
+      {{ playbook_dir }}/credentials/database_password nao existe — rode o
+      role database antes (primeira vez) ou restaure o arquivo. A api nao
+      gera senha propria.
+  when: not database_password_file.stat.exists
+
+- name: Ler senha do banco
+  no_log: true
+  set_fact:
+    database_password: "{{ lookup('password', playbook_dir + '/credentials/database_password length=24 chars=ascii_letters,digits') }}"
+
+- name: Verificar se service api ja existe
+  command: docker service inspect api
+  register: api_inspect
+  changed_when: false
+  failed_when: false
+
+- name: "Subir service api (rede publica + rede privada do banco)"
+  # Duas --network: api_network (traefik enxerga/roteia ate aqui) e
+  # api_data_network (api alcanca o service `database` pelo nome, DNS
+  # interno do overlay). Sem --constraint: stateless, scheduler pode
+  # colocar em qualquer node que exista.
+  # DATABASE_URL e so um exemplo de convencao (12-factor) — ajuste o nome
+  # da env var pro que o seu framework/ORM espera.
+  command: >
+    docker service create
+    --name api
+    --replicas {{ api_replicas }}
+    --network {{ api_network }}
+    --network {{ api_data_network }}
+    --env DATABASE_URL=postgres://{{ app_database_user }}:{{ database_password }}@database:5432/{{ app_database_name }}
+    --label traefik.enable=true
+    --label "traefik.http.routers.api.rule=Host(`{{ api_host }}`)"
+    --label traefik.http.routers.api.entrypoints=websecure
+    --label traefik.http.routers.api.tls.certresolver=letsencrypt
+    --label traefik.http.services.api.loadbalancer.server.port={{ api_container_port }}
+    {{ api_image }}
+  when: api_inspect.rc != 0
+  no_log: true
+
+- name: Validar service api com replicas ativas
+  command: "docker service ls --filter name=api --format '{{ '{{.Replicas}}' }}'"
+  register: api_replica_status
+  changed_when: false
+  until: "'{{ api_replicas }}/{{ api_replicas }}' in api_replica_status.stdout"
+  retries: 10
+  delay: 3

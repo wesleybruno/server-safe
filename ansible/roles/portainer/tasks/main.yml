@@ -1,0 +1,45 @@
+---
+- name: Verificar se volume portainer_data existe
+  command: docker volume inspect portainer_data
+  register: portainer_volume
+  changed_when: false
+  failed_when: false
+
+- name: Criar volume portainer_data
+  command: docker volume create portainer_data
+  when: portainer_volume.rc != 0
+
+- name: Verificar se service portainer ja existe
+  command: docker service inspect portainer
+  register: portainer_inspect
+  changed_when: false
+  failed_when: false
+
+- name: "Subir service portainer (sem porta publicada — roteado via traefik)"
+  # Porta 9000 (HTTP interno do container), nao 9443 (HTTPS self-signed) —
+  # traefik nao teria como validar o certificado self-signed do proprio
+  # portainer, e o edge publico (80/443) ainda esta sem TLS mesmo (ver
+  # README). O login do portainer e a propria autenticacao aqui, sem
+  # precisar de basicauth extra como no dashboard do traefik.
+  command: >
+    docker service create
+    --name portainer
+    --network {{ portainer_network }}
+    --constraint node.role==manager
+    --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock
+    --mount type=volume,source=portainer_data,target=/data
+    --label traefik.enable=true
+    --label "traefik.http.routers.portainer.rule=Host(`{{ portainer_host }}`)"
+    --label traefik.http.routers.portainer.entrypoints=websecure
+    --label traefik.http.routers.portainer.tls.certresolver=letsencrypt
+    --label traefik.http.services.portainer.loadbalancer.server.port=9000
+    {{ portainer_image }}
+  when: portainer_inspect.rc != 0
+
+- name: Validar service portainer com replica ativa
+  command: "docker service ls --filter name=portainer --format '{{ '{{.Replicas}}' }}'"
+  register: portainer_replicas
+  changed_when: false
+  until: "'1/1' in portainer_replicas.stdout"
+  retries: 10
+  delay: 3

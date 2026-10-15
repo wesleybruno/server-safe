@@ -77,6 +77,14 @@
     <label><input type="checkbox" id="s-disable-root"> desativar login root</label>
     <p class="warn">confirme que a conexao com a chave nova funciona antes de desativar a senha — nao feche este terminal.</p>
     <button id="btn-harden-ssh">aplicar</button>
+
+    <div id="s-access-box" class="hidden">
+      <p><strong>Guarde isto fora do servidor</strong> (gerenciador de senhas, junto da chave): porta, usuario e fingerprints das host keys. Se um dia o cliente SSH acusar "REMOTE HOST IDENTIFICATION HAS CHANGED", compare com estes fingerprints antes de aceitar.</p>
+      <textarea id="s-access-value" rows="9" readonly></textarea>
+      <button id="s-access-copy" type="button">Copiar resumo de acesso</button>
+      <p class="warn">Teste agora, em outro terminal, o comando acima antes de fechar esta sessao.</p>
+    </div>
+
     <pre class="log" id="s-log"></pre>
   </section>
 
@@ -114,8 +122,20 @@
 
   <section id="step-updates" class="step">
     <h2>5. Atualizacoes automaticas</h2>
-    <label><input type="checkbox" id="upd-auto-reboot"> reiniciar automaticamente quando o kernel exigir</label>
-    <label>Horario do reboot (se marcado acima)
+    <label><input type="checkbox" id="upd-auto-reboot"> reiniciar automaticamente quando o kernel exigir (janela semanal)</label>
+    <p class="warn">O reboot nunca e diario: so acontece no dia/horario abaixo, uma vez por semana, e so se alguma atualizacao exigir reboot. Reboot diario sem janela derrubou servicos em producao sem ninguem perceber.</p>
+    <label>Dia da janela de reboot
+      <select id="upd-reboot-day">
+        <option value="Sun" selected>domingo</option>
+        <option value="Mon">segunda</option>
+        <option value="Tue">terca</option>
+        <option value="Wed">quarta</option>
+        <option value="Thu">quinta</option>
+        <option value="Fri">sexta</option>
+        <option value="Sat">sabado</option>
+      </select>
+    </label>
+    <label>Horario do reboot (HH:MM, horario do servidor)
       <input id="upd-reboot-time" type="text" value="04:00">
     </label>
     <button id="btn-updates">ativar atualizacoes automaticas</button>
